@@ -136,7 +136,7 @@ struct Image {
         std::ifstream bmp(filePath, std::ios::binary);
 
         if (bmp.fail()) {
-            throw string("File " + filePath + " cannot be opened to read.");
+            throw std::string("File " + filePath + " cannot be opened to read.");
         }
 
         std::array<char, BMP_FILE_HEADER_SIZE + BMP_INFO_HEADER_SIZE> Header;
@@ -168,7 +168,7 @@ struct Image {
         std::ofstream bmp(fileName, std::ios::binary);
 
         if (bmp.fail()) {
-            throw string("File " + fileName + " cannot be opened to write.");
+            throw std::string("File " + fileName + " cannot be opened to write.");
         }
 
         // File Header

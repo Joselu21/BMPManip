@@ -5,6 +5,8 @@ using namespace std;
 
 Image CPPOperation(const Image& Img1, const Image& Img2);
 Image ASMOperation(const Image& Img1, const Image& Img2);
+Image SSEOperation(const Image& Img1, const Image& Img2);
+void Results(double CppTime, double AsmTime, double SseTime);
 
 int main(int argc, char** argv) {
 
@@ -25,12 +27,19 @@ int main(int argc, char** argv) {
         auto end = clock();
         double CppTime = double(end - begin) / CLOCKS_PER_SEC;
 
-        auto begin = clock();
-        Image Cpp = ASMOperation(Imagen1, Imagen2);
-        auto end = clock();
+        begin = clock();
+        Image Asm = ASMOperation(Imagen1, Imagen2);
+        end = clock();
         double AsmTime = double(end - begin) / CLOCKS_PER_SEC;
 
-        Results(CppTime, AsmTime);
+        begin = clock();
+        Image Sse = SSEOperation(Imagen1, Imagen2);
+        end = clock();
+        double SseTime = double(end - begin) / CLOCKS_PER_SEC;
+
+        Imagen1.WriteBMP("Output\\output.bmp");
+
+        Results(CppTime, AsmTime, SseTime);
 
     }
     catch (string Ex) {
@@ -50,10 +59,15 @@ Image CPPOperation(const Image& Img1, const Image& Img2)
 
 Image ASMOperation(const Image& Img1, const Image& Img2)
 {
+    return Image(1, 1);
+}
+
+Image SSEOperation(const Image& Img1, const Image& Img2)
+{
     return Image(1,1);
 }
 
-void Results(double CppTime, double AsmTime) {
+void Results(double CppTime, double AsmTime, double SseTime) { // TODO
 
     cout << "The program has terminated correctly." << endl
         << "These are the results: " << endl
