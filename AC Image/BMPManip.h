@@ -135,23 +135,16 @@ struct Image {
 
         std::ifstream bmp(filePath, std::ios::binary);
 
+        if (bmp.fail()) {
+            throw string("File " + filePath + " cannot be opened to read.");
+        }
+
         std::array<char, BMP_FILE_HEADER_SIZE + BMP_INFO_HEADER_SIZE> Header;
         bmp.read(Header.data(), Header.size());
 
-        unsigned int FileSize = *reinterpret_cast<uint32_t*>(&Header[2]);
-        unsigned int DataOffset = *reinterpret_cast<uint32_t*>(&Header[10]);
         unsigned int Width = *reinterpret_cast<uint32_t*>(&Header[18]);
         unsigned int Height = *reinterpret_cast<uint32_t*>(&Header[22]);
-        unsigned short Depth = *reinterpret_cast<uint16_t*>(&Header[28]);
         unsigned int DataSize = Width * Height * 3;
-
-        /**
-        std::cout << "FileSize: " << FileSize << std::endl;
-        std::cout << "DataOffset: " << DataOffset << std::endl;
-        std::cout << "Width: " << Width << std::endl;
-        std::cout << "Height: " << Height << std::endl;
-        std::cout << "Depth: " << Depth << "-bit" << std::endl;
-        std::cout << "Size: " << DataSize << " values." << std::endl;*/
 
         std::vector<char> img(DataSize);
         bmp.read(img.data(), img.size());
@@ -173,6 +166,10 @@ struct Image {
     void WriteBMP(const std::string& fileName) {
 
         std::ofstream bmp(fileName, std::ios::binary);
+
+        if (bmp.fail()) {
+            throw string("File " + fileName + " cannot be opened to write.");
+        }
 
         // File Header
         this->fileHeader.Write(bmp);
