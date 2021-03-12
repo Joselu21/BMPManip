@@ -31,9 +31,9 @@ namespace Testing {
             Imagen1.WriteBMP("Output\\output.bmp");
 
         }
-        catch (string Ex) {
+        catch (runtime_error Ex) {
 
-            cerr << "An exception has been ocurred. Please review the following error description:\n \t" << Ex << endl;
+            cerr << "An exception has been ocurred. Please review the following error description:\n \t" << Ex.what() << endl;
             return -1;
 
         }

@@ -218,7 +218,7 @@ struct Image {
             return this->BlueComponent[pos];
         }
         else {
-            throw std::string("Invalid channel color especification in call to function RetrieveValue(" + component + ')');
+            throw new std::runtime_error("Invalid channel color especification in call to function RetrieveValue(" + component + ')');
         }
 
     }
@@ -251,7 +251,7 @@ struct Image {
             AssignValue('B', x, y, value);
         }
         else {
-            throw std::string("Invalid channel color especification in call to function AssignValue(" + component + ')');
+            throw std::runtime_error("Invalid channel color especification in call to function AssignValue(" + component + ')');
         }
 
     }
@@ -266,7 +266,7 @@ struct Image {
         std::ifstream bmp(filePath, std::ios::binary);
 
         if (bmp.fail()) {
-            throw std::string("File " + filePath + " cannot be opened to read.");
+            throw std::runtime_error("File " + filePath + " cannot be opened to read.");
         }
 
         std::array<char, BMP_FILE_HEADER_SIZE + BMP_INFO_HEADER_SIZE> Header;
@@ -302,7 +302,7 @@ struct Image {
         std::ofstream bmp(fileName, std::ios::binary);
 
         if (bmp.fail()) {
-            throw std::string("File " + fileName + " cannot be opened to write.");
+            throw std::runtime_error("File " + fileName + " cannot be opened to write.");
         }
 
         // File Header
