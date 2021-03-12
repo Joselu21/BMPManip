@@ -8,6 +8,7 @@ Image CPPOperation(const Image& Img1, const Image& Img2);
 Image ASMOperation(const Image& Img1, const Image& Img2);
 Image SSEOperation(const Image& Img1, const Image& Img2);
 void Results(double CppTime, double AsmTime, double SseTime);
+string Minimum(double CppTime, double AsmTime, double SseTime);
 
 int main(int argc, char** argv) {
 
@@ -74,6 +75,11 @@ void Results(double CppTime, double AsmTime, double SseTime) { // TODO
         << "These are the results: " << endl
         << "C++ Time: " << CppTime << endl
         << "Assembly Time: " << AsmTime << endl << endl
-        << (CppTime < AsmTime ? "C++" : "Assembly") << " time is faster by " << abs(CppTime - AsmTime) / 1000.0 << " seconds." << endl;
+        << Minimum(CppTime, AsmTime, SseTime) << " time is faster" << endl;
 
+}
+
+string Minimum(double CppTime, double AsmTime, double SseTime)
+{
+    return (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE"));
 }
