@@ -1,5 +1,6 @@
 #include "BMPManip.h"
 #include <ctime>
+#include <Windows.h>
 
 using namespace std;
 
@@ -19,26 +20,26 @@ int main(int argc, char** argv) {
 
     try {
 
-        Image Imagen1 = Image::ReadBMP(string(argv[3]));
+        Image Imagen1 = Image::ReadBMP(string(argv[1]));
         Image Imagen2 = Image::ReadBMP(string(argv[2]));
 
         auto begin = clock();
         Image Cpp = CPPOperation(Imagen1, Imagen2);
         auto end = clock();
-        double CppTime = double(end - begin) / CLOCKS_PER_SEC;
+        double CppTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
         Image Asm = ASMOperation(Imagen1, Imagen2);
         end = clock();
-        double AsmTime = double(end - begin) / CLOCKS_PER_SEC;
+        double AsmTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
         Image Sse = SSEOperation(Imagen1, Imagen2);
         end = clock();
-        double SseTime = double(end - begin) / CLOCKS_PER_SEC;
+        double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         Cpp.WriteBMP("Output\\output.bmp");
-
+        ShellExecute(0, 0, L"Output\\output.bmp", 0, 0, SW_SHOW);
         Results(CppTime, AsmTime, SseTime);
 
     }
