@@ -103,7 +103,9 @@ struct Image {
 
     char RetrieveValue(char component, int x, int y) {
 
-        int pos = x * this->Width + y;
+        int x1 = x * this->Width;
+        int y1 = this->Height - y - 1;
+        int pos = x1 + y1;
 
         if (component == 'R') {
             return this->RedComponent[pos];
@@ -111,22 +113,37 @@ struct Image {
         else if (component == 'G') {
             return this->GreenComponent[pos];
         }
-        else {
+        else if (component == 'B'){
             return this->BlueComponent[pos];
+        }
+        else {
+            throw std::string("Invalid channel color especification in call to function RetrieveValue(" + component + ')');
         }
 
     }
 
     void AssignValue(char component, int x, int y, char value) {
 
+        int x1 = x * this->Width;
+        int y1 = this->Height - y -1;
+        int pos = x1 + y1;
+
         if (component == 'R') {
-            this->RedComponent[x * this->Width + y] = value;
+            this->RedComponent[pos] = value;
         }
         else if (component == 'G') {
-            this->GreenComponent[x * this->Width + y] = value;
+            this->GreenComponent[pos] = value;
+        }
+        else if (component == 'B') {
+            this->BlueComponent[pos] = value;
+        }
+        else if (component == 'A'){
+            AssignValue('R', x, y, value);
+            AssignValue('G', x, y, value);
+            AssignValue('B', x, y, value);
         }
         else {
-            this->BlueComponent[x * this->Width + y] = value;
+            throw std::string("Invalid channel color especification in call to function AssignValue(" + component + ')');
         }
 
     }

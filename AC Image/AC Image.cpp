@@ -10,7 +10,7 @@ void Results(double CppTime, double AsmTime, double SseTime);
 
 int main(int argc, char** argv) {
 
-    if (argc != 3) {
+    if (argc < 3) {
 
         cerr << "Incorrect number of parameters. Expected: 3, Obtained: " << argc << endl;
         return -1;
@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
     try {
 
-        Image Imagen1 = Image::ReadBMP(string(argv[1]));
+        Image Imagen1 = Image::ReadBMP(string(argv[3]));
         Image Imagen2 = Image::ReadBMP(string(argv[2]));
 
         auto begin = clock();
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         end = clock();
         double SseTime = double(end - begin) / CLOCKS_PER_SEC;
 
-        Imagen1.WriteBMP("Output\\output.bmp");
+        Cpp.WriteBMP("Output\\output.bmp");
 
         Results(CppTime, AsmTime, SseTime);
 
@@ -54,17 +54,17 @@ int main(int argc, char** argv) {
 
 Image CPPOperation(const Image& Img1, const Image& Img2)
 {
-    return Image(1,1);
+    return Img1;
 }
 
 Image ASMOperation(const Image& Img1, const Image& Img2)
 {
-    return Image(1, 1);
+    return Img1;
 }
 
 Image SSEOperation(const Image& Img1, const Image& Img2)
 {
-    return Image(1,1);
+    return Img1;
 }
 
 void Results(double CppTime, double AsmTime, double SseTime) { // TODO
