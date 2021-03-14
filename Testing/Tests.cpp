@@ -1,8 +1,12 @@
-#include "BMPManip.h"
+#include "../BMPManip/BMPManip.h"
 
 using namespace std;
 
-int main(string filePath, string output = "") {
+int main(int argc, char** argv) {
+
+    if (argc < 3) {
+        cerr << "Invalid number of arguments. \nExpected at least 3, but obtained only " << argc << endl;
+    }
 
     try {
 

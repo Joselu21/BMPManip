@@ -202,7 +202,8 @@ struct Image {
      * @param y The column of the image matrix.
      * @return A Char with specific value per component, row and column.
     */
-    char RetrieveValue(char component, int x, int y) {
+
+    char RetrieveValue(char component, int x, int y) const {
 
         int x1 = x * this->Width;
         int y1 = this->Height - y - 1;

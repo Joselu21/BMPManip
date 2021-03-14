@@ -4,11 +4,11 @@
 
 using namespace std;
 
-Image CPPOperation(const Image& Img1, const Image& Img2);
-Image ASMOperation(const Image& Img1, const Image& Img2);
-Image SSEOperation(const Image& Img1, const Image& Img2);
+Image CPPOperation(const Image& Img);
+Image ASMOperation(const Image& Img);
+Image SSEOperation(const Image& Img);
 void Results(double CppTime, double AsmTime, double SseTime);
-string Minimum(double CppTime, double AsmTime, double SseTime);
+char Median(const Image& Img, char component, int x, int y);
 
 int main(int argc, char** argv) {
 
@@ -21,21 +21,20 @@ int main(int argc, char** argv) {
 
     try {
 
-        Image Imagen1 = Image::ReadBMP(string(argv[1]));
-        Image Imagen2 = Image::ReadBMP(string(argv[2]));
+        Image Imagen = Image::ReadBMP(string(argv[1]));
 
         auto begin = clock();
-        Image Cpp = CPPOperation(Imagen1, Imagen2);
+        Image Cpp = CPPOperation(Imagen);
         auto end = clock();
         double CppTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Asm = ASMOperation(Imagen1, Imagen2);
+        Image Asm = ASMOperation(Imagen);
         end = clock();
         double AsmTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Sse = SSEOperation(Imagen1, Imagen2);
+        Image Sse = SSEOperation(Imagen);
         end = clock();
         double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
@@ -54,32 +53,32 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-Image CPPOperation(const Image& Img1, const Image& Img2)
+Image CPPOperation(const Image& Img)
 {
-    return Img1;
+    return Img;
 }
 
-Image ASMOperation(const Image& Img1, const Image& Img2)
+Image ASMOperation(const Image& Img)
 {
-    return Img1;
+    return Img;
 }
 
-Image SSEOperation(const Image& Img1, const Image& Img2)
+Image SSEOperation(const Image& Img)
 {
-    return Img1;
+    return Img;
 }
 
-void Results(double CppTime, double AsmTime, double SseTime) { // TODO
+void Results(double CppTime, double AsmTime, double SseTime) {
 
     cout << "The program has terminated correctly." << endl
         << "These are the results: " << endl
         << "C++ Time: " << CppTime << endl
         << "Assembly Time: " << AsmTime << endl << endl
-        << Minimum(CppTime, AsmTime, SseTime) << " time is faster" << endl;
+        << (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE")) << " time is faster" << endl;
 
 }
 
-string Minimum(double CppTime, double AsmTime, double SseTime)
-{
-    return (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE"));
+char Median(const Image& Img, char component, int x, int y) {
+
+     
 }
