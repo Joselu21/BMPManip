@@ -205,6 +205,10 @@ struct Image {
 
     char RetrieveValue(char component, int x, int y) const {
 
+        if (x < 0 || x >= this->Height || y < 0 || y >= this->Width) { // TODO: Change to exception
+            return -1;
+        }
+
         int x1 = x * this->Width;
         int y1 = this->Height - y - 1;
         int pos = x1 + y1;
@@ -286,8 +290,8 @@ struct Image {
         for (int i = DataSize - 3; i >= 0; i -= 3) {
 
             image.BlueComponent.push_back((img[i] & 0xff));
-            image.GreenComponent.push_back((img[i + 1] & 0xff));
-            image.RedComponent.push_back((img[i + 2] & 0xff));
+            image.GreenComponent.push_back((img[(size_t)i + 1] & 0xff));
+            image.RedComponent.push_back((img[(size_t)i + 2] & 0xff));
 
         }
 
