@@ -160,13 +160,16 @@ struct InfoHeader {
  * The image's height in pixels.
  * 
  * @var Image::RedComponent
- * A vector that stores all values from the Red component of the image
+ * A vector that stores all values from the Red component of the image.
  * 
  * @var Image::GreenComponent
- * A vector that stores all values from the Green component of the image
+ * A vector that stores all values from the Green component of the image.
  * 
  * @var Image::BlueComponent
- * A vector that stores all values from the Blue component of the image
+ * A vector that stores all values from the Blue component of the image.
+ * 
+ * @var Image::GreyComponent
+ * A vector that stores greyscale values of the color image.
  * 
 */
 struct Image {
@@ -180,10 +183,12 @@ struct Image {
     std::vector<char> GreenComponent;
     std::vector<char> BlueComponent;
 
+    std::vector<char> GreyComponent;
+
     /**
      * @brief Constructor of the Image struct. Initializes the headers and the pixel data containers.
-     * @param w Width of the image
-     * @param h Height of the image
+     * @param w Width of the image.
+     * @param h Height of the image.
     */
     Image(int w, int h) {
         this->fileHeader = FileHeader(w, h);
@@ -193,6 +198,7 @@ struct Image {
         this->RedComponent = std::vector<char>();
         this->GreenComponent = std::vector<char>();
         this->BlueComponent = std::vector<char>();
+        this->GreyComponent = std::vector<char>();
     }
 
     /**
@@ -202,7 +208,6 @@ struct Image {
      * @param y The column of the image matrix.
      * @return A Char with specific value per component, row and column.
     */
-
     char RetrieveValue(char component, int x, int y) const {
 
         if (x < 0 || x >= this->Height || y < 0 || y >= this->Width) { // TODO: Change to exception
@@ -221,6 +226,9 @@ struct Image {
         }
         else if (component == 'B'){
             return this->BlueComponent[pos];
+        }
+        else if (component == 'S' && !this->GreyComponent.empty()) {
+            return this->GreyComponent[pos];
         }
         else {
             throw new std::runtime_error("Invalid channel color especification in call to function RetrieveValue(" + component + ')');
@@ -302,7 +310,7 @@ struct Image {
      * @brief Method used to store in the disk the object that calls it, in BMPv1 format. 
      * @param fileName Path and name of the .bmp to be created.
     */
-    void WriteBMP(const std::string& fileName) {
+    void WriteBMP(const std::string& fileName, bool mode = 0) {
 
         std::ofstream bmp(fileName, std::ios::binary);
 

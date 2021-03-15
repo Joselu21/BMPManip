@@ -1,5 +1,6 @@
 #include "BMPManip.h"
 #include <ctime>
+#include <algorithm>
 #include <Windows.h>
 
 using namespace std;
@@ -12,7 +13,7 @@ char Median(const Image& Img, char component, int x, int y);
 
 int main(int argc, char** argv) {
 
-    if (argc < 3) {
+    if (argc < 2) {
 
         cerr << "Incorrect number of parameters. Expected: 3, Obtained: " << argc << endl;
         return -1;
@@ -129,29 +130,16 @@ char Median(const Image& Img, char component, int x, int y) {
     }
 
 
-    while (order < (array_8.size()-1)) {
-
-        for (int i = 0;i < (array_8.size() - 1);i++) {
-            if (array_8[i] < array_8[i + 1]) {
-                order++;
-            }
-            else {
-                cambio = array_8[i];
-                array_8[i] = array_8[i + 1];
-                array_8[i + 1] = cambio;
-                order = 0;
-            }
-        }
-
-    }
+    sort(array_8.begin(), array_8.end());
 
     if (array_8.size() % 2 == 0) {
-        median_pair = (array_8[array_8.size() / 2] + array_8[(array_8.size() / 2) + 1])/2;
-        
-        return median_pair;
+
+        return array_8[array_8.size() / 2] + array_8[(array_8.size() / 2) + 1] / 2;
     }
     else {
-        return array_8[(array_8.size()/2) + 0.5];
+
+        return array_8[(array_8.size()/ 2) + 1];
+
     }
 
 }
