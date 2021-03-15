@@ -96,7 +96,6 @@ char Median(const Image& Img, char component, int x, int y) {
     vector<int> array_8;
     int order = 0, cambio = 0,median_pair=0;
 
-<<<<<<< Updated upstream
     if (Img.RetrieveValue(component, x - 1, y - 1) != -1) {
         array_8.push_back(Img.RetrieveValue(component, x - 1, y - 1));
     }
