@@ -154,11 +154,6 @@ char Median(const Image& Img, char component, int x, int y) {
         return array_8[(array_8.size()/2) + 0.5];
     }
 
-    
-=======
-
-     
->>>>>>> Stashed changes
 }
 
 
