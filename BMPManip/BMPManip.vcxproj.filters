@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AC Image.cpp" />
+    <ClCompile Include="Headers\Image.cpp">
+      <Filter>Headers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Dataset">
+      <UniqueIdentifier>{9fb377d8-5c23-4211-a0ec-f930cbbdd4a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{1f05ca2e-edee-4359-a743-3a478fac1cfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{ffda3b60-7d3d-4356-8375-64f95a2aa4c4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Dataset\1.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\2.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\3.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\4.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\5.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\6.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\7.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\8.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\9.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\10.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\11.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\12.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\13.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\14.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\15.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+    <Image Include="Dataset\prueba8.bmp">
+      <Filter>Dataset</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Headers\FileHeader.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Image.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\InfoHeader.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\BMPManip.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

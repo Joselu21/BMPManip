@@ -1,4 +1,4 @@
-#include "BMPManip.h"
+#include "Headers/BMPManip.h"
 #include <ctime>
 #include <algorithm>
 #include <Windows.h>
@@ -9,7 +9,7 @@ Image CPPOperation(Image& Img);
 Image ASMOperation(Image& Img);
 Image SSEOperation(Image& Img);
 void Results(double CppTime, double AsmTime, double SseTime);
-char Median(const Image& Img, char component, int x, int y);
+unsigned char Median(const Image& Img, char component, int x, int y);
 
 int main(int argc, char** argv) {
 
@@ -23,24 +23,26 @@ int main(int argc, char** argv) {
     try {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
+        Image GreyScale = Image::AdaptToGrayScale(Imagen);
 
         auto begin = clock();
-        Image Cpp = CPPOperation(Imagen);
+        Image Cpp = CPPOperation(GreyScale);
         auto end = clock();
         double CppTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Asm = ASMOperation(Imagen);
+        Image Asm = ASMOperation(GreyScale);
         end = clock();
         double AsmTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Sse = SSEOperation(Imagen);
+        Image Sse = SSEOperation(GreyScale);
         end = clock();
         double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         Cpp.WriteBMP("Output\\output.bmp");
         ShellExecute(0, 0, L"Output\\output.bmp", 0, 0, SW_SHOW);
+
         Results(CppTime, AsmTime, SseTime);
 
     }
@@ -56,20 +58,19 @@ int main(int argc, char** argv) {
 
 Image CPPOperation(Image& Img){
 
-    for (int fila = 0; fila < Img.Height; fila++) {
+    Image Cpp = Image(Img);
 
-        for (int columna = 0; columna < Img.Width; columna++) {
+    for (int fila = 0; fila < Cpp.Height; fila++) {
 
-            Img.AssignValue('R', fila, columna, Median(Img, 'R', fila, columna));
-            Img.AssignValue('G', fila, columna, Median(Img, 'G', fila, columna));
-            Img.AssignValue('B', fila, columna, Median(Img, 'B', fila, columna));
+        for (int columna = 0; columna < Cpp.Width; columna++) {
+
+            unsigned char value = Median(Img, 'R', fila, columna);
+            Cpp.AssignValue('A', fila, columna, value);
 
         }
-
     }
 
-    return Img;
-
+    return Cpp;
 }
 
 Image ASMOperation(Image& Img)
@@ -87,66 +88,39 @@ void Results(double CppTime, double AsmTime, double SseTime) {
     cout << "The program has terminated correctly." << endl
         << "These are the results: " << endl
         << "C++ Time: " << CppTime << endl
-        << "Assembly Time: " << AsmTime << endl << endl
+        << "Assembly Time: " << AsmTime << endl
+        << "SSE Time: " << SseTime << endl << endl
         << (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE")) << " time is faster" << endl;
 
 }
 
-char Median(const Image& Img, char component, int x, int y) {
+unsigned char Median(const Image& Img, char component, int x, int y) {
     
-    vector<int> array_8;
-    int order = 0, cambio = 0,median_pair=0;
+    vector<unsigned char> AdjacentValues;
 
-    if (Img.RetrieveValue(component, x - 1, y - 1) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x - 1, y - 1));
+    for (int x1 = x - 1; x1 <= x + 1; x1++) {
+
+        for (int y1 = y - 1; y1 <= y + 1; y1++) {
+
+            char value = Img.RetrieveValue(component, x1, y1);
+
+            if (value != -1) {
+                AdjacentValues.push_back(value);
+            }
+        }
     }
 
-    if (Img.RetrieveValue(component, x, y - 1) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x, y - 1));
-    }
+    sort(AdjacentValues.begin(), AdjacentValues.end());
 
-    if (Img.RetrieveValue(component, x + 1, y - 1) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x + 1, y - 1));
-    }
+    if (AdjacentValues.size() % 2 == 0) {
 
-    if (Img.RetrieveValue(component, x - 1, y) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x - 1, y));
-    }
+        return AdjacentValues[(AdjacentValues.size() / 2) - 1] + AdjacentValues[(AdjacentValues.size() / 2)] / 2;
 
-    if (Img.RetrieveValue(component, x + 1, y) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x + 1, y));
-    }
-
-    if (Img.RetrieveValue(component, x - 1, y + 1) != -1) {
-        array_8.push_back(Img.RetrieveValue(component, x - 1, y + 1));
-    }
-
-    if (Img.RetrieveValue(component, x, y + 1) != -1){
-        array_8.push_back(Img.RetrieveValue(component, x, y + 1));
-    }
-
-    if (Img.RetrieveValue(component, x + 1, y + 1) != -1){
-        array_8.push_back(Img.RetrieveValue(component, x + 1, y + 1));
-    }
-
-
-    sort(array_8.begin(), array_8.end());
-
-    if (array_8.size() % 2 == 0) {
-
-        return array_8[array_8.size() / 2] + array_8[(array_8.size() / 2) + 1] / 2;
     }
     else {
 
-        return array_8[(array_8.size()/ 2) + 1];
+        return AdjacentValues[(AdjacentValues.size()/ 2)];
 
     }
 
 }
-
-
-
-
-
-     
-
