@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <Windows.h>
 
+constexpr wchar_t OutputPath[] = L"Output\\output.bmp";
+
 using namespace std;
 
 Image CPPOperation(Image& Img);
@@ -40,9 +42,9 @@ int main(int argc, char** argv) {
         end = clock();
         double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
-        Cpp.WriteBMP("Output\\output.bmp");
-        ShellExecute(0, 0, L"Output\\output.bmp", 0, 0, SW_SHOW);
-
+        Cpp.WriteBMP((char*)(OutputPath));
+        ShellExecute(0, 0, OutputPath, 0, 0, SW_SHOW);
+        
         Results(CppTime, AsmTime, SseTime);
 
     }
@@ -76,6 +78,7 @@ Image CPPOperation(Image& Img){
 Image ASMOperation(Image& Img)
 {
     return Img;
+
 }
 
 Image SSEOperation(Image& Img)
