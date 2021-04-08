@@ -1,37 +1,79 @@
-#include "../BMPManip/BMPManip.h"
+//#include "../BMPManip/BMPManip.h"
+#include <iostream>
 
 using namespace std;
 
 int main(int argc, char** argv) {
 
-    if (argc < 3) {
-        cerr << "Invalid number of arguments. \nExpected at least 3, but obtained only " << argc << endl;
+    const int tam = 1024;
+
+    unsigned char* v = new unsigned char[tam];
+
+    int pos = 0;
+    char op = 's';
+
+    /*
+    if (i % 2 == 0) {
+        v[i] = 'a';
     }
+    if (i == 10) {
+        v[i] = 'A';
+    }
+    if (i % 2 != 0) {
+        v[i] = '0';
+    }*/
 
-    try {
+    while (op != 'n')
+    {
+        cout << "PROGRAMA QUE IMPRIME CARACTERES HASTA CIERTA POSICION EN ASM" << "\n";
+        cout << "Introduce la posicion del elemento que quieres imprimir: ";
+        cin >> pos;
 
-        Image Imagen= Image::ReadBMP(filePath);
-
-        Imagen.AssignValue('A', 0, 0, 0);
-        Imagen.AssignValue('A', Imagen.Width - 1, 0, 0);
-        Imagen.AssignValue('A', 0, Imagen.Width - 1, 0);
-        Imagen.AssignValue('A', Imagen.Width - 1, Imagen.Width - 1, 0);
-
-        unsigned char p31_0 = Imagen.RetrieveValue('R', Imagen.Width - 1, 0);
-        unsigned char p31_1 = Imagen.RetrieveValue('R', Imagen.Width - 1, 1);
-        unsigned char p30_0 = Imagen.RetrieveValue('R', Imagen.Width - 2, 0);
-        unsigned char p30_1 = Imagen.RetrieveValue('R', Imagen.Width - 2, 1);
-
-        if (!output.empty()) {
-            Imagen.WriteBMP("Output\\output.bmp");
+        for (int i = 0; i < tam; i++) {
+            v[i] = (unsigned char)i;
         }
 
-    }
-    catch (runtime_error Ex) {
+        int tamElem = sizeof(v[1]);
+        int tamVector = sizeof(v[1]) * tam;
 
-        cerr << "An exception has been ocurred. Please review the following error description:\n \t" << Ex.what() << endl;
-        return -1;
+        int contador = 0;
+        int i_esimo = 0;
+        int dirMemoria = 0;
 
+        //xmm0-7
+        //st0-7
+
+        _asm {
+
+            mov edx, [contador]
+            mov eax, v
+            mov ecx, [tamElem]
+
+
+            bucle:
+            cmp edx, [pos]
+                je finBucle
+                mov ebx, 0
+                mov ebx, [eax]
+                mov[i_esimo], ebx
+                mov contador, edx
+                mov dirMemoria, eax
+        }
+        cout << (unsigned char)i_esimo << "\n";
+        _asm {
+            mov edx, [contador]
+            mov eax, [dirMemoria]
+            add edx, 1
+            add eax, 1
+            jmp bucle
+            finBucle :
+
+        }
+
+        cout << "Terminado con exito";
+        cout << "Desea continuar?(s/n): ";
+        cin >> op;
+        cout << endl;
     }
 
     return 0;
