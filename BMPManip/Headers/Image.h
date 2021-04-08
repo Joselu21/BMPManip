@@ -46,11 +46,12 @@ class Image {
 
         FileHeader fileHeader;
         InfoHeader infoHeader;
+
+    public:
+
         std::vector<unsigned char> RedComponent;
         std::vector<unsigned char> GreenComponent;
         std::vector<unsigned char> BlueComponent;
-
-    public:
 
         int Width;
         int Height;
@@ -60,7 +61,9 @@ class Image {
          * @param w Width of the image.
          * @param h Height of the image.
         */
-        Image(int w, int h);        
+        Image(int w, int h);
+
+        Image(unsigned char* Grey, int Width, int Height);
 
         /**
          * @brief Method used to read values from the images given a component and coordinates.
@@ -87,6 +90,13 @@ class Image {
         void WriteBMP(const std::string& filePath) const;
 
         /**
+         * @brief
+         * @param Img
+         * @return
+        */
+        unsigned char* Order();
+
+        /**
          * @brief Static method to read a BMP file and return an Image object storing all the information.
          * @param filePath The path to the file to be read.
          * @return Image object that contains all the information of the given image path.
@@ -97,6 +107,7 @@ class Image {
          * @brief Method used to populate the GreyComponent vector.
         */
         static Image AdaptToGrayScale(const Image& Img);
+
 };
 
 #endif // !BMP_MANIPULATION

@@ -6,4 +6,4 @@
 #include "InfoHeader.h"
 #include "Image.h"
 
-#endif // !1
+#endif // !BMP_MANIPULATION

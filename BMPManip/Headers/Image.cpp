@@ -10,6 +10,12 @@ Image::Image(int w, int h) {
     this->BlueComponent = std::vector<unsigned char>();
 }
 
+Image::Image(unsigned char* Grey, int Width, int Height) {
+
+
+
+}
+
 char Image::RetrieveValue(char component, int x, int y) const {
 
     if (x < 0 || x >= this->Height || y < 0 || y >= this->Width) { // TODO: Change to exception
@@ -151,4 +157,17 @@ Image Image::AdaptToGrayScale(const Image& Img) {
     }
 
     return GreyScale;
+}
+
+
+unsigned char* Image::Order() {
+
+    unsigned char* Img = new unsigned char[(size_t)(this->Width) * (size_t)(this->Height)];
+
+    for () {
+
+
+
+    }
+
 }

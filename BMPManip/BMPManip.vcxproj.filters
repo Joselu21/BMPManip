@@ -5,6 +5,7 @@
     <ClCompile Include="Headers\Image.cpp">
       <Filter>Headers</Filter>
     </ClCompile>
+    <ClCompile Include="ASM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Dataset">

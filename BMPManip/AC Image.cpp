@@ -7,11 +7,13 @@ constexpr wchar_t OutputPath[] = L"Output\\output.bmp";
 
 using namespace std;
 
-Image CPPOperation(Image& Img);
-Image ASMOperation(Image& Img);
-Image SSEOperation(Image& Img);
+int main(int argc, char** argv);
+unsigned char* CPPOperation(const unsigned char*, int, int);
+unsigned char* ASMOperation(const unsigned char*, int, int);
+unsigned char* SSEOperation(const unsigned char*, int, int);
 void Results(double CppTime, double AsmTime, double SseTime);
-unsigned char Median(const Image& Img, char component, int x, int y);
+unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height);
+int AdaptCoords(int x, int y, int Width, int Height);
 
 int main(int argc, char** argv) {
 
@@ -25,24 +27,25 @@ int main(int argc, char** argv) {
     try {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
-        Image GreyScale = Image::AdaptToGrayScale(Imagen);
+        unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).Order();
 
         auto begin = clock();
-        Image Cpp = CPPOperation(GreyScale);
+        unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = clock();
         double CppTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Asm = ASMOperation(GreyScale);
+        unsigned char* Asm = ASMOperation(GreyScale, Imagen.Width, Imagen.Height);
         end = clock();
         double AsmTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
         begin = clock();
-        Image Sse = SSEOperation(GreyScale);
+        unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
         end = clock();
         double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
 
-        Cpp.WriteBMP((char*)(OutputPath));
+
+        Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, OutputPath, 0, 0, SW_SHOW);
         
         Results(CppTime, AsmTime, SseTime);
@@ -58,32 +61,30 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-Image CPPOperation(Image& Img){
+unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
 
-    Image Cpp = Image(Img);
+    for (int fila = 0; fila < Height; fila++) {
 
-    for (int fila = 0; fila < Cpp.Height; fila++) {
+        for (int columna = 0; columna < Width; columna++) {
 
-        for (int columna = 0; columna < Cpp.Width; columna++) {
-
-            unsigned char value = Median(Img, 'R', fila, columna);
-            Cpp.AssignValue('A', fila, columna, value);
+            unsigned char value = Median(Img, 'R', fila, columna, Width, Height);
+            Img[AdaptCoords(fila, columna, Width, Height)] = value;
 
         }
     }
-
-    return Cpp;
+    
 }
 
-Image ASMOperation(Image& Img)
-{
-    return Img;
+unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
+ 
+
 
 }
 
-Image SSEOperation(Image& Img)
-{
-    return Img;
+unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
+
+
+
 }
 
 void Results(double CppTime, double AsmTime, double SseTime) {
@@ -97,7 +98,7 @@ void Results(double CppTime, double AsmTime, double SseTime) {
 
 }
 
-unsigned char Median(const Image& Img, char component, int x, int y) {
+unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height) {
     
     vector<unsigned char> AdjacentValues;
 
@@ -105,10 +106,10 @@ unsigned char Median(const Image& Img, char component, int x, int y) {
 
         for (int y1 = y - 1; y1 <= y + 1; y1++) {
 
-            char value = Img.RetrieveValue(component, x1, y1);
+            char pos = AdaptCoords(x1, y1, Width, Height);
 
-            if (value != -1) {
-                AdjacentValues.push_back(value);
+            if (pos != -1) {
+                AdjacentValues.push_back(Img[pos]);
             }
         }
     }
@@ -126,4 +127,15 @@ unsigned char Median(const Image& Img, char component, int x, int y) {
 
     }
 
+}
+
+int AdaptCoords(int x, int y, int Width, int Height)
+{
+    if (x < 0 || x >= Height || y < 0 || y >= Width) {
+        return -1;
+    }
+
+    int x1 = x * Width;
+    int y1 = Height - y - 1;
+    return x1 + y1;
 }
