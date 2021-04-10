@@ -12,7 +12,9 @@ Image::Image(int w, int h) {
 
 Image::Image(unsigned char* Grey, int Width, int Height) {
 
-
+    this->Width = Width;
+    this->Height = Height;
+    // TODO
 
 }
 

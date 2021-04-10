@@ -11,9 +11,10 @@ int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
 unsigned char* ASMOperation(unsigned char*, int, int);
 unsigned char* SSEOperation(unsigned char*, int, int);
-void Results(double CppTime, double AsmTime, double SseTime);
-unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height);
-int AdaptCoords(int x, int y, int Width, int Height);
+void Results(double, double, double);
+unsigned char Median(unsigned char*, char, int, int, int, int);
+int AdaptCoords(int, int, int, int);
+void BubbleSort(unsigned char*, int);
 
 int main(int argc, char** argv) {
 
@@ -102,7 +103,8 @@ void Results(double CppTime, double AsmTime, double SseTime) {
 
 unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height) {
     
-    vector<unsigned char> AdjacentValues;
+    unsigned char* AdjacentValues = new unsigned char[9];
+    int AdjacentValuesSize = 0;
 
     for (int x1 = x - 1; x1 <= x + 1; x1++) {
 
@@ -111,21 +113,38 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
             char pos = AdaptCoords(x1, y1, Width, Height);
 
             if (pos != -1) {
-                AdjacentValues.push_back(Img[pos]);
+                AdjacentValues[AdjacentValuesSize] = Img[pos];
+                AdjacentValuesSize++;
             }
         }
     }
 
-    sort(AdjacentValues.begin(), AdjacentValues.end());
+    /*
+    
+    EQUIVALENCIA PARA ASM
+    Podeis hacer este codigo 9 veces en vez de un doble bucle, asegurandoos cambiar el x1 -1 y el y1 -1 para las diferentes posiciones.
 
-    if (AdjacentValues.size() % 2 == 0) {
+    char pos;
+    pos = AdaptCoords(x1-1, y1-1, Width, Height);
 
-        return AdjacentValues[(AdjacentValues.size() / 2) - 1] + AdjacentValues[(AdjacentValues.size() / 2)] / 2;
+    if (pos != -1) {
+        AdjacentValues[AdjacentValuesSize] = Img[pos];
+        AdjacentValuesSize++;
+    }
+  
+    
+    */
+
+    BubbleSort(AdjacentValues, AdjacentValuesSize);
+
+    if (AdjacentValuesSize % 2 == 0) {
+
+        return AdjacentValues[(AdjacentValuesSize / 2) - 1] + AdjacentValues[(AdjacentValuesSize / 2)] / 2;
 
     }
     else {
 
-        return AdjacentValues[(AdjacentValues.size()/ 2)];
+        return AdjacentValues[(AdjacentValuesSize/ 2)];
 
     }
 
@@ -140,4 +159,21 @@ int AdaptCoords(int x, int y, int Width, int Height)
     int x1 = x * Width;
     int y1 = Height - y - 1;
     return x1 + y1;
+}
+
+void BubbleSort(unsigned char* arr, int n) {
+
+    for (int i = 0; i < n - 1; i++) {
+
+        for (int j = 0; j < n - i - 1; j++) {
+
+            if (arr[j] > arr[j + 1]) {
+
+                unsigned char temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+
+            }
+        }
+    }
 }
