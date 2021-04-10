@@ -141,7 +141,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AC Image.cpp" />
-    <ClCompile Include="ASM.cpp" />
     <ClCompile Include="Headers\Image.cpp" />
   </ItemGroup>
   <ItemGroup>

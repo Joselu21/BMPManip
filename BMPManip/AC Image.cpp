@@ -8,9 +8,9 @@ constexpr wchar_t OutputPath[] = L"Output\\output.bmp";
 using namespace std;
 
 int main(int argc, char** argv);
-unsigned char* CPPOperation(const unsigned char*, int, int);
-unsigned char* ASMOperation(const unsigned char*, int, int);
-unsigned char* SSEOperation(const unsigned char*, int, int);
+unsigned char* CPPOperation(unsigned char*, int, int);
+unsigned char* ASMOperation(unsigned char*, int, int);
+unsigned char* SSEOperation(unsigned char*, int, int);
 void Results(double CppTime, double AsmTime, double SseTime);
 unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height);
 int AdaptCoords(int x, int y, int Width, int Height);
@@ -72,18 +72,20 @@ unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
 
         }
     }
+
+    return Img;
     
 }
 
 unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
  
-
+    return Img;
 
 }
 
 unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
 
-
+    return Img;
 
 }
 

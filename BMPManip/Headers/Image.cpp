@@ -164,10 +164,16 @@ unsigned char* Image::Order() {
 
     unsigned char* Img = new unsigned char[(size_t)(this->Width) * (size_t)(this->Height)];
 
-    for () {
+    for (int i = 0; i < this->Height; i++) {
 
+        for (int j = 0; j < this->Width; j++) {
 
+            Img[i * this->Height + j] = this->RetrieveValue('R', i, j);
+
+        }
 
     }
+
+    return Img;
 
 }
