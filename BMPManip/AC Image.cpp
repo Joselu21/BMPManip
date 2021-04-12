@@ -145,7 +145,6 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
     else {
 
         return AdjacentValues[(AdjacentValuesSize/ 2)];
-
     }
 
 }
