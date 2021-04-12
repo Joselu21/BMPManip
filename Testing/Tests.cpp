@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 }
 */
 
-/*PROGRAMA BUBBLESORT Y CALCULO MEDIAN DE UNA ARRAY DE CARACTERES*/
+/*PROGRAMA BUBLESORT Y CALCULO MEDIAN DE UN ARRAY DE CARACTERES, Y ADAPTCOORDS*/
 int main()
 {
     const int tam = 10;
@@ -90,8 +90,6 @@ int main()
     //unsigned char* v = new unsigned char[tam];
     unsigned char* v1 = new unsigned char[tam];
     unsigned int* v2 = new unsigned int[tam];
-
-    int pos = 0;
 
     cout << "PROGRAMA QUE ORDENA EL VECTOR (BUBBLE SORT)" << "\n";
 
@@ -141,6 +139,13 @@ int main()
     unsigned int mediana2 = 0;
     unsigned int mediana3 = 0;
     unsigned int medianaTotal = 0;
+
+    int x = 4;
+    int y = 2;
+    int Width = 5;
+    int Height = 5;
+    int pos = 0;
+
 
     _asm {
         mov edx, i
@@ -237,6 +242,35 @@ int main()
             jmp finMediana
 
             finMediana :
+
+    AdaptCoords:
+        mov eax, x
+            mov ebx, y
+            cmp eax, 0
+            jl superaLimites
+            cmp ebx, 0
+            jl superaLimites
+            cmp eax, Height
+            jge superaLimites
+            cmp ebx, Width
+            jge superaLimites
+
+            mov eax, Width
+            mul x
+            sub Height, ebx
+            sub Height, 1
+            add eax, Height
+            jmp finAdaptCoords
+
+            superaLimites :
+        mov eax, -1
+            jmp finAdaptCoords
+
+            finAdaptCoords :
+        mov pos, eax
+
+
+
     }
 
     for (int i = 0;i < tam;i++)
@@ -258,6 +292,8 @@ int main()
     cout << "Mediana 2: " << (unsigned char)mediana2 << endl;
     cout << "Mediana 3: " << mediana3 << endl;
     cout << "Mediana Total: " << (unsigned char)medianaTotal << endl;
+
+    cout << "AdaptCoords: " << pos << endl;
 
     cout << endl << "Terminado con exito";
     int n = 0;
