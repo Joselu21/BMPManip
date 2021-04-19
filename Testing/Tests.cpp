@@ -1,165 +1,194 @@
-//#include "../BMPManip/BMPManip.h"
 #include <iostream>
+
 
 using namespace std;
 
-/*PROGRAMA QUE IMPRIME CARACTERES HASTA CIERTA POSICION EN ASM*/
-/*
-int main(int argc, char** argv) {
-
-    const int tam = 1024;
-
-    unsigned char* v = new unsigned char[tam];
-
-    int pos = 0;
-    char op = 's';
-
-    /*
-    if (i % 2 == 0) {
-        v[i] = 'a';
-    }
-    if (i == 10) {
-        v[i] = 'A';
-    }
-    if (i % 2 != 0) {
-        v[i] = '0';
-    }
-
-    while (op != 'n')
-    {
-        cout << "PROGRAMA QUE IMPRIME CARACTERES HASTA CIERTA POSICION EN ASM" << "\n";
-        cout << "Introduce la posicion del elemento que quieres imprimir: ";
-        cin >> pos;
-
-        for (int i = 0; i < tam; i++) {
-            v[i] = (unsigned char)i;
-        }
-
-        int tamElem = sizeof(v[1]);
-        int tamVector = sizeof(v[1]) * tam;
-
-        int contador = 0;
-        int i_esimo = 0;
-        int dirMemoria = 0;
-
-        //xmm0-7
-        //st0-7
-
-        _asm {
-
-            mov edx, [contador]
-            mov eax, v
-            mov ecx, [tamElem]
-
-
-            bucle:
-            cmp edx, [pos]
-                je finBucle
-                mov ebx, 0
-                mov ebx, [eax]
-                mov[i_esimo], ebx
-                mov contador, edx
-                mov dirMemoria, eax
-        }
-        cout << (unsigned char)i_esimo << "\n";
-        _asm {
-            mov edx, [contador]
-            mov eax, [dirMemoria]
-            add edx, 1
-            add eax, 1
-            jmp bucle
-            finBucle :
-
-        }
-
-        cout << "Terminado con exito";
-        cout << "Desea continuar?(s/n): ";
-        cin >> op;
-        cout << endl;
-    }
-
-    return 0;
-}
-*/
-
-/*PROGRAMA BUBLESORT Y CALCULO MEDIAN DE UN ARRAY DE CARACTERES, Y ADAPTCOORDS*/
 int main()
 {
-    const int tam = 10;
+    const int tam = 25;
+    int AdjacentValuesSize = 0;
 
-    //unsigned char* v = new unsigned char[tam];
-    unsigned char* v1 = new unsigned char[tam];
-    unsigned int* v2 = new unsigned int[tam];
+    unsigned char* ImgChar = new unsigned char[tam];
+    unsigned int* Img = new unsigned int[tam];
+    unsigned int* AdjacentValues = new unsigned int[tam];
 
-    cout << "PROGRAMA QUE ORDENA EL VECTOR (BUBBLE SORT)" << "\n";
+    cout << "***CALCULO DE LA MEDIANA DE UNA COMPONENTE MATRICIAL***" << endl;
 
-
-    v1[0] = 'c';
-    v1[1] = 'b';
-    v1[2] = 'e';
-    v1[3] = 'd';
-    v1[4] = 'd';
-    v1[5] = 'f';
-    v1[6] = 'h';
-    v1[7] = 'z';
-    v1[8] = 'n';
-    v1[9] = 'k';
+    ImgChar[0] = 'a';
+    ImgChar[1] = 'b';
+    ImgChar[2] = 'c';
+    ImgChar[3] = 'd';
+    ImgChar[4] = 'e';
+    ImgChar[5] = 'f';
+    ImgChar[6] = 'g';
+    ImgChar[7] = 'h';
+    ImgChar[8] = 'i';
+    ImgChar[9] = 'j';
+    ImgChar[10] = 'k';
+    ImgChar[11] = 'l';
+    ImgChar[12] = 'm';
+    ImgChar[13] = 'n';
+    ImgChar[14] = 'o';
+    ImgChar[15] = 'p';
+    ImgChar[16] = 'q';
+    ImgChar[17] = 'r';
+    ImgChar[18] = 's';
+    ImgChar[19] = 't';
+    ImgChar[20] = 'u';
+    ImgChar[21] = 'v';
+    ImgChar[22] = 'w';
+    ImgChar[23] = 'x';
+    ImgChar[24] = 'y';
 
     for (int i = 0;i < tam;i++)
     {
-        v2[i] = v1[i];
+        Img[i] = ImgChar[i];
     }
 
 
-    //cout << "Carácter " << v1[0] << " en ASCII: " << v2[0];
-
-
-    cout << "Vector inicial: ";
-    for (int i = 0; i < tam; i++) {
-        if (i != 0) {
-            cout << ", ";
-        }
-        cout << v2[i];
-    }
-
-
-    int tamElem = sizeof(v2[1]);
-    int tamVector = sizeof(v2[1]) * tam;
-
-    int i = 2;
-    int nj = tam - 1;
-    int j = 0;
+    int tamElem = sizeof(AdjacentValues[1]);
+    int tamVector = sizeof(AdjacentValues[1]) * tam;
 
     unsigned int elem = 0;
     unsigned int elemSig = 0;
     unsigned int dirMemoria = 0;
     unsigned int dirMemoriaSig = 0;
-    int intercambio = 0;
     unsigned int mediana = 0;
     unsigned int mediana2 = 0;
     unsigned int mediana3 = 0;
     unsigned int medianaTotal = 0;
+    int i = 0;
+    int j = 0;
 
-    int x = 4;
-    int y = 2;
+    /*
+    *              y
+    *          4 3 2 1 0
+    *        ------------
+    *      0 | a b c d e
+    *      1 | f g h i j
+    *    x 2 | k l m n o
+    *      3 | p q r s t
+    *      4 | u v w x y
+    *
+    * x=1, y=3 -> g
+    * x=0, y=0 -> e
+    */
+
+    int x = 0; //4
+    int y = 0; //2
+    int xIni = 0;
+    int yIni = 0;
+    int xFin = 0;
+    int yFin = 0;
     int Width = 5;
     int Height = 5;
     int pos = 0;
+    int posImg = 0;
 
 
     _asm {
-        mov edx, i
-        mov ecx, j
 
-        bucleExt :
-        cmp edx, tam
-            je finBucleExt
-            mov eax, v2
+    ValuesAdjacent:
+        mov eax, x
+            mov xIni, eax
+            sub xIni, 1
+            mov xFin, eax
+            add xFin, 1
+            mov edx, xFin
+
+            bucleExt1 :
+        cmp xIni, edx
+            jg finBucleExt1
+            mov eax, y
+            mov yIni, eax
+            sub yIni, 1
+            mov yFin, eax
+            add yFin, 1
+            mov ecx, yFin
+
+            bucleInt1 :
+        cmp yIni, ecx
+            jg finBucleInt1
+
+            AdaptCoords :
+        mov eax, xIni
+            mov ebx, yIni
+            cmp eax, 0
+            jl superaLimites
+            cmp ebx, 0
+            jl superaLimites
+            cmp eax, Height
+            jge superaLimites
+            cmp ebx, Width
+            jge superaLimites
+
+            mov eax, Width
+            mul xIni
+            mov ecx, Height
+            sub ecx, ebx
+            sub ecx, 1
+            add eax, ecx
+            jmp finAdaptCoords
+
+            superaLimites :
+        mov eax, -1
+            jmp finAdaptCoords
+
+            finAdaptCoords :
+        mov pos, eax
+
+            cmp pos, -1
+            je incYIni
+            mov ecx, Img
+            mov eax, pos
+            mov ebx, tamElem
+            mul ebx
+            add ecx, eax
+            mov edx, [ecx]
+            mov posImg, edx
+
+            mov eax, AdjacentValuesSize
+            mov ebx, tamElem
+            mul ebx
+            mov ecx, AdjacentValues
+            add ecx, eax
+            mov edx, posImg
+            mov[ecx], edx
+            add AdjacentValuesSize, 1
+            jmp incYIni
+
+            incYIni :
+        add yIni, 1
+            mov ecx, yFin
+            jmp bucleInt1
+
+            finBucleInt1 :
+        add xIni, 1
+            mov edx, xFin
+            jmp bucleExt1
+
+            finBucleExt1 :
+        jmp finValuesAdjacent
+
+            finValuesAdjacent :
+        jmp BubbleSort
+
+            BubbleSort :
+        mov i, 2
+            mov j, 0
+            mov edx, 2
             mov ecx, 0
-            bucleInt :
+            sub AdjacentValuesSize, 1
 
-            cmp ecx, nj
-            je finBucleInt
+            bucleExt2 :
+            cmp edx, AdjacentValuesSize
+            je finBucleExt2
+            mov eax, AdjacentValues
+            mov ecx, 0
+            bucleInt2 :
+
+            cmp ecx, AdjacentValuesSize
+            je finBucleInt2
 
             mov ebx, [eax]
             mov elem, ebx
@@ -174,7 +203,7 @@ int main()
 
             noSwap :
         inc ecx
-            jmp bucleInt
+            jmp bucleInt2
 
             Swap :
         inc ecx
@@ -188,18 +217,22 @@ int main()
             mov ecx, j
             mov edx, i
             mov eax, dirMemoriaSig
-            jmp bucleInt
+            jmp bucleInt2
 
-            finBucleInt :
+            finBucleInt2 :
         inc edx
-            jmp bucleExt
+            jmp bucleExt2
 
-            finBucleExt :
+            finBucleExt2 :
+        jmp finBubbleSort
+
+            finBubbleSort :
         jmp Mediana
 
             Mediana :
-        mov ecx, v2
-            mov eax, tam
+        add AdjacentValuesSize, 1
+            mov ecx, AdjacentValues
+            mov eax, AdjacentValuesSize
             mov edx, 0
             mov ebx, 2
 
@@ -238,62 +271,28 @@ int main()
             mov eax, mediana3
 
             div ebx
-            mov medianaTotal, eax
+            mov mediana, eax
             jmp finMediana
 
             finMediana :
-
-    AdaptCoords:
-        mov eax, x
-            mov ebx, y
-            cmp eax, 0
-            jl superaLimites
-            cmp ebx, 0
-            jl superaLimites
-            cmp eax, Height
-            jge superaLimites
-            cmp ebx, Width
-            jge superaLimites
-
-            mov eax, Width
-            mul x
-            sub Height, ebx
-            sub Height, 1
-            add eax, Height
-            jmp finAdaptCoords
-
-            superaLimites :
-        mov eax, -1
-            jmp finAdaptCoords
-
-            finAdaptCoords :
-        mov pos, eax
-
-
-
+        mov eax, mediana
+            mov medianaTotal, eax
     }
 
-    for (int i = 0;i < tam;i++)
+
+
+    cout << endl;
+    cout << "AdjacentValuesSize: " << AdjacentValuesSize << endl;
+    cout << "Vector ordenado: ";
+    for (int i = 0; i < AdjacentValuesSize;i++)
     {
-        v1[i] = v2[i];
-    }
-
-
-    cout << endl << "Vector final ordenado: ";
-    for (int i = 0; i < tam; i++) {
         if (i != 0) {
             cout << ", ";
         }
-        cout << v1[i];
+        cout << (char)AdjacentValues[i];
     }
 
-    cout << endl;
-    cout << "Mediana 1: " << (unsigned char)mediana << endl;
-    cout << "Mediana 2: " << (unsigned char)mediana2 << endl;
-    cout << "Mediana 3: " << mediana3 << endl;
-    cout << "Mediana Total: " << (unsigned char)medianaTotal << endl;
-
-    cout << "AdaptCoords: " << pos << endl;
+    cout << endl << "Mediana Total: " << (unsigned char)medianaTotal << endl;
 
     cout << endl << "Terminado con exito";
     int n = 0;
