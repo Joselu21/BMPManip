@@ -16,6 +16,9 @@ void Results(double, double, double);
 unsigned char Median(unsigned char*, char, int, int, int, int);
 int AdaptCoords(int, int, int, int);
 void BubbleSort(unsigned char*, int);
+void BubbleSortSSE(unsigned char*, int);
+unsigned char ASMMedian(unsigned char*, char, int, int, int, int);
+unsigned char SSEMedian(unsigned char*, char, int, int, int, int);
 
 int main(int argc, char** argv) {
 
@@ -85,7 +88,7 @@ unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
 
         for (int columna = 0; columna < Width; columna++) {
 
-            unsigned char value = Median(Img, 'R', fila, columna, Width, Height);
+            unsigned char value = ASMMedian(Img, 'R', fila, columna, Width, Height);
             Img[AdaptCoords(fila, columna, Width, Height)] = value;
 
         }
@@ -96,6 +99,16 @@ unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
 }
 
 unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
+
+    for (int fila = 0; fila < Height; fila++) {
+
+        for (int columna = 0; columna < Width; columna++) {
+
+            unsigned char value = SSEMedian(Img, 'R', fila, columna, Width, Height);
+            Img[AdaptCoords(fila, columna, Width, Height)] = value;
+
+        }
+    }
 
     return Img;
 
@@ -130,22 +143,6 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
         }
     }
 
-    /*
-    
-    EQUIVALENCIA PARA ASM
-    Podeis hacer este codigo 9 veces en vez de un doble bucle, asegurandoos cambiar el x1 -1 y el y1 -1 para las diferentes posiciones.
-
-    char pos;
-    pos = AdaptCoords(x1-1, y1-1, Width, Height);
-
-    if (pos != -1) {
-        AdjacentValues[AdjacentValuesSize] = Img[pos];
-        AdjacentValuesSize++;
-    }
-  
-    
-    */
-
     BubbleSort(AdjacentValues, AdjacentValuesSize);
 
     if (AdjacentValuesSize % 2 == 0) {
@@ -165,7 +162,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
     int AdjacentValuesSize = 0;
 
     unsigned int* Img = new unsigned int[tam];
-    unsigned int* AdjacentValues = new unsigned int[tam];
+    unsigned int* AdjacentValues = new unsigned int[9];
 
     //***CALCULO DE LA MEDIANA DE UNA COMPONENTE MATRICIAL***
 
@@ -177,8 +174,8 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
 
     //Variables para el entorno de ASM
 
-    int tamElem = sizeof(AdjacentValues[1]);
-    int tamVector = sizeof(AdjacentValues[1]) * tam;
+    int tamElem = sizeof(AdjacentValues[0]);
+    int tamVector = tamElem * 9;
 
     unsigned int elem = 0;
     unsigned int elemSig = 0;
@@ -197,22 +194,6 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
     int yFin = 0;
     int pos = 0;
     int posImg = 0;
-
-    //EJEMPLO MATRIZ
-    /*
-    *              y
-    *          4 3 2 1 0
-    *        ------------
-    *      0 | a b c d e
-    *      1 | f g h i j
-    *    x 2 | k l m n o
-    *      3 | p q r s t
-    *      4 | u v w x y
-    *
-    * x=1, y=3 -> g
-    * x=0, y=0 -> e
-    */
-
 
     _asm {
 
@@ -299,9 +280,9 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             jmp finValuesAdjacent
 
             finValuesAdjacent :
-            jmp BubbleSort
+            jmp bubbleSort
 
-            BubbleSort :
+            bubbleSort :
             mov i, 2
             mov j, 0
             mov edx, 2
@@ -407,20 +388,39 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             mov medianaTotal, eax
     }
 
-    cout << endl;
-    cout << "AdjacentValuesSize: " << AdjacentValuesSize << endl;
-    cout << "Vector ordenado: ";
-    for (int i = 0; i < AdjacentValuesSize;i++)
-    {
-        if (i != 0) {
-            cout << ", ";
+    return (unsigned char)medianaTotal;
+}
+
+unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, int Width, int Height) {
+
+    unsigned char* AdjacentValues = new unsigned char[9];
+    int AdjacentValuesSize = 0;
+
+    for (int x1 = x - 1; x1 <= x + 1; x1++) {
+
+        for (int y1 = y - 1; y1 <= y + 1; y1++) {
+
+            unsigned char pos = AdaptCoords(x1, y1, Width, Height);
+
+            if (pos != -1) {
+                AdjacentValues[AdjacentValuesSize] = ImgChar[pos];
+                AdjacentValuesSize++;
+            }
         }
-        cout << (char)AdjacentValues[i];
     }
 
-    cout << endl << "Mediana Total: " << (unsigned char)medianaTotal << endl;
+    BubbleSortSSE(AdjacentValues, AdjacentValuesSize);
 
-    return (unsigned char)medianaTotal;
+    if (AdjacentValuesSize % 2 == 0) {
+
+        return AdjacentValues[(AdjacentValuesSize / 2) - 1] + AdjacentValues[(AdjacentValuesSize / 2)] / 2;
+
+    }
+    else {
+
+        return AdjacentValues[(AdjacentValuesSize / 2)];
+    }
+
 }
 
 int AdaptCoords(int x, int y, int Width, int Height)
@@ -449,4 +449,10 @@ void BubbleSort(unsigned char* arr, int n) {
             }
         }
     }
+}
+
+void BubbleSortSSE(unsigned char* arr, int n) {
+
+
+
 }
