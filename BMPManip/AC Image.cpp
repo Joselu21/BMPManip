@@ -2,8 +2,9 @@
 #include <ctime>
 #include <algorithm>
 #include <Windows.h>
+#include <chrono>
 
-constexpr wchar_t OutputPath[] = L"Output\\output.bmp";
+constexpr auto OutputPath = "Output\\output.bmp";
 
 using namespace std;
 
@@ -30,24 +31,24 @@ int main(int argc, char** argv) {
         Image Imagen = Image::ReadBMP(string(argv[1]));
         unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).Order();
 
-        auto begin = clock();
+        auto begin = chrono::high_resolution_clock::now();
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
-        auto end = clock();
-        double CppTime = double(end) - double(begin) / CLOCKS_PER_SEC;
+        auto end = chrono::high_resolution_clock::now();
+        double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
-        begin = clock();
+        begin = chrono::high_resolution_clock::now();
         unsigned char* Asm = ASMOperation(GreyScale, Imagen.Width, Imagen.Height);
-        end = clock();
-        double AsmTime = double(end) - double(begin) / CLOCKS_PER_SEC;
+        end = chrono::high_resolution_clock::now();
+        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
-        begin = clock();
+        begin = chrono::high_resolution_clock::now();
         unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
-        end = clock();
-        double SseTime = double(end) - double(begin) / CLOCKS_PER_SEC;
+        end = chrono::high_resolution_clock::now();
+        double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
 
         Imagen.WriteBMP((char*)(OutputPath));
-        ShellExecute(0, 0, OutputPath, 0, 0, SW_SHOW);
+        ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
         
         Results(CppTime, AsmTime, SseTime);
 
@@ -80,6 +81,16 @@ unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
 
 unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
  
+    for (int fila = 0; fila < Height; fila++) {
+
+        for (int columna = 0; columna < Width; columna++) {
+
+            unsigned char value = Median(Img, 'R', fila, columna, Width, Height);
+            Img[AdaptCoords(fila, columna, Width, Height)] = value;
+
+        }
+    }
+
     return Img;
 
 }
@@ -110,7 +121,7 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
 
         for (int y1 = y - 1; y1 <= y + 1; y1++) {
 
-            char pos = AdaptCoords(x1, y1, Width, Height);
+            unsigned char pos = AdaptCoords(x1, y1, Width, Height);
 
             if (pos != -1) {
                 AdjacentValues[AdjacentValuesSize] = Img[pos];
@@ -180,14 +191,10 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
 
     int i = 0;
     int j = 0;
-    int x = 0; //4
-    int y = 0; //2
     int xIni = 0;
     int yIni = 0;
     int xFin = 0;
     int yFin = 0;
-    int Width = 5;
-    int Height = 5;
     int pos = 0;
     int posImg = 0;
 
