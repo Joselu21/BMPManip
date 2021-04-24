@@ -96,6 +96,9 @@ class Image {
         */
         unsigned char* Order();
 
+        unsigned char** MyOrder();
+        unsigned char** MyOrderNormal();
+
         /**
          * @brief Static method to read a BMP file and return an Image object storing all the information.
          * @param filePath The path to the file to be read.

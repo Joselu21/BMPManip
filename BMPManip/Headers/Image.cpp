@@ -132,7 +132,6 @@ void Image::WriteBMP(const std::string& filePath) const {
             bmp.write((char*)&r[i], 1);
 
         }
-
     }
 
     bmp.close();
@@ -161,6 +160,41 @@ Image Image::AdaptToGrayScale(const Image& Img) {
     return GreyScale;
 }
 
+unsigned char** Image::MyOrder() {
+    unsigned char** Img = new unsigned char* [(size_t)(this->Height + 2)];
+    for (size_t i = 0; i < this->Height + 2; i++) {
+        Img[i] = new unsigned char[(size_t)(this->Width + 2)];
+    }
+    for (int i = 1; i <= this->Height; i++) {
+        for (int j = 1; j <= this->Width; j++) {
+            
+            Img[i][j] = this->RetrieveValue('R', i-1, j-1);
+        }
+    }
+    for (int i = 0; i < this->Width + 2; i++) {
+        Img[0][i] = 0;
+        Img[this->Height + 1][i] = 0;
+    }
+    for (int i = 0; i < this->Height + 2; i++) {
+        Img[i][0] = 0;
+        Img[i][this->Width + 1] = 0;
+    }
+    return Img;
+}
+
+unsigned char** Image::MyOrderNormal() {
+    unsigned char** Img = new unsigned char* [(size_t)(this->Height)];
+    for (size_t i = 0; i < this->Height; i++) {
+        Img[i] = new unsigned char[(size_t)(this->Width)];
+    }
+    for (int i = 0; i < this->Height; i++) {
+        for (int j = 0; j < this->Width; j++) {
+
+            Img[i][j] = this->RetrieveValue('R', i, j);
+        }
+    }
+    return Img;
+}
 
 unsigned char* Image::Order() {
 

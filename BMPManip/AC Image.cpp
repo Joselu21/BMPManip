@@ -11,11 +11,12 @@ using namespace std;
 int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
 unsigned char* ASMOperation(unsigned char*, int, int);
-unsigned char* SSEOperation(unsigned char*, int, int);
+void SSEOperation(unsigned char**, int, int);
 void Results(double, double, double);
 unsigned char Median(unsigned char*, char, int, int, int, int);
 int AdaptCoords(int, int, int, int);
 void BubbleSort(unsigned char*, int);
+void printImg(unsigned char** img, int w, int h);
 
 int main(int argc, char** argv) {
 
@@ -30,22 +31,29 @@ int main(int argc, char** argv) {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
         unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).Order();
+        unsigned char** MyGreyScaleNormal = Image::AdaptToGrayScale(Imagen).MyOrderNormal();
+        unsigned char** MyGreyScale = Image::AdaptToGrayScale(Imagen).MyOrder();
 
         auto begin = chrono::high_resolution_clock::now();
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
-        double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        double CppTime = chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
 
         begin = chrono::high_resolution_clock::now();
         unsigned char* Asm = ASMOperation(GreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
+        double AsmTime = chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+        
+        cout << "Original" << endl;
+        printImg(MyGreyScaleNormal, Imagen.Width, Imagen.Height);
+        cout << "img**: " << MyGreyScale << ", img*: " << MyGreyScale[0] << "img: " << MyGreyScale[0][0] << endl;
+        printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         begin = chrono::high_resolution_clock::now();
-        unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
+        SSEOperation(MyGreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
+        printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
+        cout << "Size of ptr: " << sizeof(MyGreyScale) << endl;
 
         Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
@@ -80,7 +88,8 @@ unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
 }
 
 unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
- 
+    cout << endl;
+
     for (int fila = 0; fila < Height; fila++) {
 
         for (int columna = 0; columna < Width; columna++) {
@@ -92,19 +101,159 @@ unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
     }
 
     return Img;
-
 }
 
-unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
+void SSEOperation(unsigned char** Img, int Width, int Height) {
+    // Valores adyacentes (de 16 pixeles)
+    unsigned char** adj = new unsigned char* [9];   // La mediana usa 9 elementos
+    for (size_t i = 0; i < 9; i++) {
+        adj[i] = new unsigned char[16]; // En un registro xmm caben 16
+    }
+    for (size_t i = 0; i < 9; i++) {
+        for (size_t j = 0; j < 16; j++) {
+            adj[i][j] = 1;
+        }
+        cout << endl;
+    }
 
-    return Img;
+    _asm {
+        mov eax,Height;
+        mov ebx, Width;
+        mov ecx, 0;       // Contador altura
+        mov edx, 0;       // Contador anchura
+        mov edi, Img
+        add edi, 4        // Saltamos la primera fila
 
+    Bucle1:
+        mov esi, [edi];                 // Direccion de la fila
+        cmp eax, ecx;
+        jle Fin1;
+
+    Bucle2:
+        cmp ebx, edx;
+        jle Fin2;
+
+        push esi;
+        mov esi, [edi - 4];
+        movdqu xmm0, [esi + edx];               // Cargamos el superior izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos el superior
+        movdqu xmm2, [esi + edx + 2];           // Cargamos el superior dcha
+        push edi;
+
+        mov esi, adj;
+        mov edi, [esi];
+        movdqu [edi], xmm0;                        // adj[0] = superiores izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu [edi], xmm1;                        // adj[1] = superiores
+        add esi, 4;
+        mov edi, [esi];
+        movdqu [edi], xmm2;                        // adj[2] = superiores dcha
+        pop edi;
+        pop esi;
+
+        // movdqu carga unaligned, ¿disminuye el rendimiento? ¿preferible movdqa?
+        movdqu xmm0, [esi + edx];               // Cargamos los adyacentes a izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos los 16 pixeles
+        movdqu xmm2, [esi + edx + 2];           // Cargamos los adyacentes a dcha
+
+        push esi;
+        push edi;
+        mov esi, adj;
+        add esi, 12;
+        mov edi, [esi];
+        movdqu [edi], xmm0;                        // adj[3] = adyacentes a izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu [edi], xmm1;                        // adj[4] = pixeles actuales
+        add esi, 4;
+        mov edi, [esi];
+        movdqu [edi], xmm2;                        // adj[5] = adyacentes dcha
+        pop edi;
+        pop esi;
+
+        push esi;
+        mov esi, [edi + 4];
+        movdqu xmm0, [esi + edx];               // Cargamos el superior izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos el superior
+        movdqu xmm2, [esi + edx + 2];           // Cargamos el superior dcha
+        push edi;
+
+        mov esi, adj;
+        add esi, 24;
+        mov edi, [esi];
+        movdqu[edi], xmm0;                        // adj[6] = inferiores izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm1;                        // adj[7] = inferiores
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm2;                        // adj[8] = inferiores dcha
+        pop edi;
+        pop esi;
+
+// Custom BubbleSort
+        pushad
+        mov eax, 1;             // eax = i = 1
+        mov ecx, 9;             // tam del vector a ordenar
+BucleBubble1:
+        cmp eax, ecx;
+        jl FinBubble1           // i < tam
+        mov ebx, 0;             // ebx = j = 0
+
+BucleBubble2:
+        mov esi, ecx;           // esi = ecx = tam
+        sub ecx, eax;           // esi = tam - i
+        cmp ebx, esi;           
+        jl FinBubble2;          // j < tam - i
+
+        mov esi, adj;
+
+
+FinBubble2:
+FinBubble1: 
+        popad
+// End Custom BubbleSort
+
+
+        sub esp, 16;
+        movdqu[esp], xmm0;
+
+        movdqu xmm0, [esp];
+        add esp, 16;
+
+        //push esi;
+        //mov esi, [edi - 4];
+        movdqu xmm0, [esi + edx + 1];             // Cargamos superior, y asi sucesivamente...
+        //pop esi;
+        //paddb xmm0, xmm1;
+        //pcmpeqd xmm0, xmm0;
+        movdqu [esi + edx + 1], xmm0;         // Escribimos 16 pixeles
+
+        add edx, 16;
+        jmp Bucle2;
+
+    Fin2:
+        xor edx, edx;                 // Contador de columnas a 0
+        add ecx, 1;                 // Contador filas + 1
+        add edi, 4;                 // Siguiente puntero filas
+        jmp Bucle1;
+
+    Fin1:
+
+    }
+    cout << "Auxiliares para ordenar" << endl;
+    for (size_t i = 0; i < 9; i++) {
+        for (size_t j = 0; j < 16; j++) {
+            printf("%d ", adj[i][j]);
+        }
+        cout << endl;
+    }
 }
 
 void Results(double CppTime, double AsmTime, double SseTime) {
 
-    cout << "The program has terminated correctly." << endl
-        << "These are the results: " << endl
+    cout << "These are the results: " << endl
         << "C++ Time: " << CppTime << endl
         << "Assembly Time: " << AsmTime << endl
         << "SSE Time: " << SseTime << endl << endl
@@ -449,4 +598,15 @@ void BubbleSort(unsigned char* arr, int n) {
             }
         }
     }
+}
+
+void printImg(unsigned char** img, int w, int h)
+{
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            printf("%d ", img[i][j]);
+        }
+        cout << endl;
+    }
+    cout << endl;
 }
