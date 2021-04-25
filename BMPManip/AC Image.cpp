@@ -37,24 +37,24 @@ int main(int argc, char** argv) {
         auto begin = chrono::high_resolution_clock::now();
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
-        double CppTime = chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+        double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         begin = chrono::high_resolution_clock::now();
         unsigned char* Asm = ASMOperation(GreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        double AsmTime = chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
         
-        cout << "Original" << endl;
-        printImg(MyGreyScaleNormal, Imagen.Width, Imagen.Height);
-        cout << "img**: " << MyGreyScale << ", img*: " << MyGreyScale[0] << "img: " << MyGreyScale[0][0] << endl;
-        printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
+        //cout << "Original" << endl;
+        //printImg(MyGreyScaleNormal, Imagen.Width, Imagen.Height);
+        //cout << "img**: " << MyGreyScale << ", img*: " << MyGreyScale[0] << "img: " << MyGreyScale[0][0] << endl;
+        //printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         begin = chrono::high_resolution_clock::now();
         unsigned int res = SSEOperation(MyGreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        cout << "SSE res: " << res << endl;
-        printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
+        //cout << "SSE res: " << res << endl;
+        //printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        cout << "Size of ptr: " << sizeof(MyGreyScale) << endl;
+        //cout << "Size of ptr: " << sizeof(MyGreyScale) << endl;
 
         Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
@@ -208,15 +208,8 @@ BucleBubble2:
         sub esi, eax;           // esi = tam - i
         cmp esi, ebx;           
         jle FinBubble2;          // j < tam - i
+
 // Custom swap con SSE
-        /*
-        mov esi, adj;
-        mov edi, [esi + 4 * ebx];
-        movdqu xmm0, [edi];     // v[j]
-        add ebx, 1;
-        mov edi, [esi + 4 * ebx];   
-        movdqu xmm2, [edi];         // v[j+1]
-        */
         push eax;
         mov eax, punt;
         movd xmm0, [eax];
@@ -227,20 +220,7 @@ BucleBubble2:
         add ebx, 1;
         mov edi, [esi + 4 * ebx];
         movdqu xmm2, [edi];         // v[j+1]
-        /*
-        movdqa xmm1, xmm0;          // La comparacion "chafara" xmm0, lo copio a xmm1
-        pcmpgtb xmm0, xmm2;
-        pcmpeqd xmm3, xmm3;            // xmm3 todo a 1
-        pxor xmm3, xmm0;            // Comparacion negada
-        movdqa xmm4, xmm1;
-        pand xmm4, xmm0;            // v[j] AND (v[j]>v[j+1])
-        movdqa xmm5, xmm2;
-        pand xmm5, xmm3;            // v[j+1] AND !(v[j]>v[j+1])
-        por xmm4, xmm5;             // xmm4 v[j+1] despues de los swaps
-        pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
-        pand xmm3, xmm1;             // v[j] AND !(v[j]>v[j+1])
-        por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
-        */
+
         movdqa xmm3, xmm2;          // xmm3 = v[j+1]
         paddb xmm3, xmm0;           // v[j+1] + 0x80
         paddb xmm0, xmm1;           // v[j] + 0x80
@@ -255,12 +235,7 @@ BucleBubble2:
         pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
         pand xmm3, xmm1;            // v[j] AND !(v[j]>v[j+1])
         por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
-        /*
-        movdqu[edi], xmm4;
-        sub ebx, 1;
-        mov edi, [esi + 4 * ebx];
-        movdqu [edi], xmm3;
-        */
+
         movdqu[edi], xmm4;
         sub ebx, 1;
         mov edi, [esi + 4 * ebx];
@@ -275,22 +250,13 @@ FinBubble2:
         add eax, 1;
         jmp BucleBubble1
 FinBubble1: 
-        popad
+        mov eax, adj;
+        mov eax, [eax + 16];            // La posicion 4 contiene las medianas
+        movdqu xmm0, [eax];
+        popad                           // Recuperamos registros anteriores a Bubblesort
 // End Custom BubbleSort
 
-        sub esp, 16;
-        movdqu[esp], xmm0;
-
-        movdqu xmm0, [esp];
-        add esp, 16;
-
-        //push esi;
-        //mov esi, [edi - 4];
-        movdqu xmm0, [esi + edx + 1];             // Cargamos superior, y asi sucesivamente...
-        //pop esi;
-        //paddb xmm0, xmm1;
-        //pcmpeqd xmm0, xmm0;
-        movdqu [esi + edx + 1], xmm0;         // Escribimos 16 pixeles
+        movdqu [esi + edx + 1], xmm0;   // Escribimos 16 medianas
 
         add edx, 16;
         jmp Bucle2;
@@ -304,13 +270,14 @@ FinBubble1:
     Fin1:
 
     }
+    /*
     cout << "Auxiliares para ordenar" << endl;
     for (size_t i = 0; i < 9; i++) {
         for (size_t j = 0; j < 16; j++) {
             printf("%d\t", adj[i][j]);
         }
         cout << endl;
-    }
+    }*/
     /*
     size_t tam = 9;
     for (size_t i = 1; i < tam; i++)
