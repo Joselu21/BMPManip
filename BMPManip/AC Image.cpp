@@ -11,7 +11,7 @@ using namespace std;
 int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
 unsigned char* ASMOperation(unsigned char*, int, int);
-void SSEOperation(unsigned char**, int, int);
+unsigned int SSEOperation(unsigned char**, int, int);
 void Results(double, double, double);
 unsigned char Median(unsigned char*, char, int, int, int, int);
 int AdaptCoords(int, int, int, int);
@@ -49,8 +49,9 @@ int main(int argc, char** argv) {
         cout << "img**: " << MyGreyScale << ", img*: " << MyGreyScale[0] << "img: " << MyGreyScale[0][0] << endl;
         printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         begin = chrono::high_resolution_clock::now();
-        SSEOperation(MyGreyScale, Imagen.Width, Imagen.Height);
+        unsigned int res = SSEOperation(MyGreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
+        cout << "SSE res: " << res << endl;
         printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
         double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
         cout << "Size of ptr: " << sizeof(MyGreyScale) << endl;
@@ -103,7 +104,7 @@ unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
     return Img;
 }
 
-void SSEOperation(unsigned char** Img, int Width, int Height) {
+unsigned int SSEOperation(unsigned char** Img, int Width, int Height) {
     // Valores adyacentes (de 16 pixeles)
     unsigned char** adj = new unsigned char* [9];   // La mediana usa 9 elementos
     for (size_t i = 0; i < 9; i++) {
@@ -113,8 +114,9 @@ void SSEOperation(unsigned char** Img, int Width, int Height) {
         for (size_t j = 0; j < 16; j++) {
             adj[i][j] = 1;
         }
-        cout << endl;
     }
+    UINT32 ochenta = 0x80808080;
+    UINT32* punt = &ochenta;
 
     _asm {
         mov eax,Height;
@@ -197,24 +199,84 @@ void SSEOperation(unsigned char** Img, int Width, int Height) {
         mov eax, 1;             // eax = i = 1
         mov ecx, 9;             // tam del vector a ordenar
 BucleBubble1:
-        cmp eax, ecx;
-        jl FinBubble1           // i < tam
+        cmp ecx, eax;
+        jle FinBubble1           // i < tam
         mov ebx, 0;             // ebx = j = 0
 
 BucleBubble2:
         mov esi, ecx;           // esi = ecx = tam
-        sub ecx, eax;           // esi = tam - i
-        cmp ebx, esi;           
-        jl FinBubble2;          // j < tam - i
-
+        sub esi, eax;           // esi = tam - i
+        cmp esi, ebx;           
+        jle FinBubble2;          // j < tam - i
+// Custom swap con SSE
+        /*
         mov esi, adj;
+        mov edi, [esi + 4 * ebx];
+        movdqu xmm0, [edi];     // v[j]
+        add ebx, 1;
+        mov edi, [esi + 4 * ebx];   
+        movdqu xmm2, [edi];         // v[j+1]
+        */
+        push eax;
+        mov eax, punt;
+        movd xmm0, [eax];
+        shufps xmm0, xmm0, 0;
+        mov esi, adj;
+        mov edi, [esi + 4 * ebx];
+        movdqu xmm1, [edi];     // v[j]
+        add ebx, 1;
+        mov edi, [esi + 4 * ebx];
+        movdqu xmm2, [edi];         // v[j+1]
+        /*
+        movdqa xmm1, xmm0;          // La comparacion "chafara" xmm0, lo copio a xmm1
+        pcmpgtb xmm0, xmm2;
+        pcmpeqd xmm3, xmm3;            // xmm3 todo a 1
+        pxor xmm3, xmm0;            // Comparacion negada
+        movdqa xmm4, xmm1;
+        pand xmm4, xmm0;            // v[j] AND (v[j]>v[j+1])
+        movdqa xmm5, xmm2;
+        pand xmm5, xmm3;            // v[j+1] AND !(v[j]>v[j+1])
+        por xmm4, xmm5;             // xmm4 v[j+1] despues de los swaps
+        pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
+        pand xmm3, xmm1;             // v[j] AND !(v[j]>v[j+1])
+        por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
+        */
+        movdqa xmm3, xmm2;          // xmm3 = v[j+1]
+        paddb xmm3, xmm0;           // v[j+1] + 0x80
+        paddb xmm0, xmm1;           // v[j] + 0x80
+        pcmpgtb xmm0, xmm3;         // xmm0 = (v[j] > v[j+1])
+        pcmpeqd xmm3, xmm3;         // xmm3 todo a 1
+        pxor xmm3, xmm0;            // xmm3 = !(v[j] > v[j+1])
+        movdqa xmm4, xmm1;
+        pand xmm4, xmm0;            // v[j] AND (v[j]>v[j+1])
+        movdqa xmm5, xmm2;
+        pand xmm5, xmm3;            // v[j+1] AND !(v[j]>v[j+1])
+        por xmm4, xmm5;             // xmm4 v[j+1] despues de los swaps
+        pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
+        pand xmm3, xmm1;            // v[j] AND !(v[j]>v[j+1])
+        por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
+        /*
+        movdqu[edi], xmm4;
+        sub ebx, 1;
+        mov edi, [esi + 4 * ebx];
+        movdqu [edi], xmm3;
+        */
+        movdqu[edi], xmm4;
+        sub ebx, 1;
+        mov edi, [esi + 4 * ebx];
+        movdqu[edi], xmm3;
+        pop eax;
+        // Fin Custom Swap
 
+        add ebx, 1;
+        jmp BucleBubble2
 
 FinBubble2:
+        add eax, 1;
+        jmp BucleBubble1
 FinBubble1: 
         popad
 // End Custom BubbleSort
-
 
         sub esp, 16;
         movdqu[esp], xmm0;
@@ -245,10 +307,57 @@ FinBubble1:
     cout << "Auxiliares para ordenar" << endl;
     for (size_t i = 0; i < 9; i++) {
         for (size_t j = 0; j < 16; j++) {
-            printf("%d ", adj[i][j]);
+            printf("%d\t", adj[i][j]);
         }
         cout << endl;
     }
+    /*
+    size_t tam = 9;
+    for (size_t i = 1; i < tam; i++)
+        for (size_t j = 0; j < tam - i; j++) {
+            _asm {
+                // Custom swap con SSE
+                mov eax, punt;
+                movd xmm0, [eax];
+                shufps xmm0, xmm0, 0;
+                mov ebx, j;
+                mov esi, adj;
+                mov edi, [esi + 4 * ebx];
+                movdqu xmm1, [edi];     // v[j]
+                add ebx, 1;
+                mov edi, [esi + 4 * ebx];
+                movdqu xmm2, [edi];         // v[j+1]
+        // Problema: pcmpgtb compara con signo, para comparar sin signo:
+                movdqa xmm3, xmm2;          // xmm3 = v[j+1]
+                paddb xmm3, xmm0;           // v[j+1] + 0x80
+                paddb xmm0, xmm1;           // v[j] + 0x80
+                pcmpgtb xmm0, xmm3;         // xmm0 = (v[j] > v[j+1])
+                pcmpeqd xmm3, xmm3;         // xmm3 todo a 1
+                pxor xmm3, xmm0;            // xmm3 = !(v[j] > v[j+1])
+                movdqa xmm4, xmm1;
+                pand xmm4, xmm0;            // v[j] AND (v[j]>v[j+1])
+                movdqa xmm5, xmm2;
+                pand xmm5, xmm3;            // v[j+1] AND !(v[j]>v[j+1])
+                por xmm4, xmm5;             // xmm4 v[j+1] despues de los swaps
+                pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
+                pand xmm3, xmm1;            // v[j] AND !(v[j]>v[j+1])
+                por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
+
+                movdqu[edi], xmm4;
+                sub ebx, 1;
+                mov edi, [esi + 4 * ebx];
+                movdqu[edi], xmm3;
+                // Fin Custom Swap
+            }
+            cout << "BubbleSort i: " << i << " j: " << j << endl;
+            for (size_t a = 0; a < 9; a++) {
+                for (size_t b = 0; b < 16; b++) {
+                    printf("%d\t", adj[a][b]);
+                }
+                cout << endl;
+            }
+        }
+    */
 }
 
 void Results(double CppTime, double AsmTime, double SseTime) {
