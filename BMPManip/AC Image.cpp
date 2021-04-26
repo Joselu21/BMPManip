@@ -196,7 +196,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
     int posImg = 0;
 
     _asm {
-
+        ;;Cálculo de los valores adjacentes a un píxel
         ValuesAdjacent:
         mov eax, x
             mov xIni, eax
@@ -219,6 +219,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             cmp yIni, ecx
             jg finBucleInt1
 
+            ;;Permite obtener la posición
             AdaptCoords :
             mov eax, xIni
             mov ebx, yIni
@@ -282,6 +283,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             finValuesAdjacent :
             jmp bubbleSort
 
+            ;Algoritmo de ordenación de la burbuja
             bubbleSort :
             mov i, 2
             mov j, 0
@@ -308,6 +310,8 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             mov elemSig, ebx
             mov ebx, elem
             cmp ebx, elemSig
+            ;;Si el elemSig es mayor que el anterior se intercambiaran
+            ;;sus posiciones en el vector
             jg Swap
 
             noSwap :
@@ -338,6 +342,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             finBubbleSort :
             jmp Mediana
 
+            ;;Cálculo de la Mediana de los valores de un vector
             Mediana :
             add AdjacentValuesSize, 1
             mov ecx, AdjacentValues
@@ -348,6 +353,7 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             div ebx
             mov ebx, 0
             cmp edx, ebx
+            ;;Dependiendo si el tamaño del vector es par o impar el cálculo es distinto
             je esPar
             jne esImpar
 
