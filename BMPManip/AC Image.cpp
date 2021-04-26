@@ -10,14 +10,14 @@ using namespace std;
 
 int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
-unsigned char* ASMOperation(unsigned char*, int, int);
+unsigned int* ASMOperation(unsigned int*, int, int);
 unsigned char* SSEOperation(unsigned char*, int, int);
 void Results(double, double, double);
 unsigned char Median(unsigned char*, char, int, int, int, int);
 int AdaptCoords(int, int, int, int);
 void BubbleSort(unsigned char*, int);
 void BubbleSortSSE(unsigned char*, int);
-unsigned char ASMMedian(unsigned char*, char, int, int, int, int);
+unsigned int ASMMedian(unsigned int*, int, int, int, int);
 unsigned char SSEMedian(unsigned char*, char, int, int, int, int);
 
 int main(int argc, char** argv) {
@@ -26,7 +26,6 @@ int main(int argc, char** argv) {
 
         cerr << "Incorrect number of parameters. Expected: 3, Obtained: " << argc << endl;
         return -1;
-
     }
 
     try {
@@ -34,27 +33,53 @@ int main(int argc, char** argv) {
         Image Imagen = Image::ReadBMP(string(argv[1]));
         unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).Order();
 
-        auto begin = chrono::high_resolution_clock::now();
+        
+        /**********************************
+        **_Código de la operación en C++_**
+        ***********************************/
+
+        auto begin = chrono::high_resolution_clock::now();        
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
         double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
+
+        /**********************************
+        **_Código de la operación en ASM_**
+        ***********************************/
+
+        // Casting a un array de tipo unsigned int para facilitar
+        // el manejo del vector GreyScale en asm
+        unsigned int* Img = new unsigned int[Imagen.Width*Imagen.Height];
+        for (int i = 0;i < Imagen.Width * Imagen.Height;i++)
+        {
+            Img[i] = GreyScale[i];
+        }
+
         begin = chrono::high_resolution_clock::now();
-        unsigned char* Asm = ASMOperation(GreyScale, Imagen.Width, Imagen.Height);
+        unsigned int* Asm = ASMOperation(Img, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
+        for (int i = 0;i < Imagen.Width * Imagen.Height; i++)
+        {
+            GreyScale[i] = Asm[i];
+        }
         double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
+
+        /**********************************
+        **_Código de la operación en ASM_**
+        ***********************************/
+        
         begin = chrono::high_resolution_clock::now();
         unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
         double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
+        
 
         Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
         
         Results(CppTime, AsmTime, SseTime);
-
     }
     catch (runtime_error Ex) {
 
@@ -82,20 +107,28 @@ unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
     
 }
 
-unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
+/// <summary>
+/// Función encargada de recorrer el array Img y
+/// realizar la llamada a ASMMedian con cada píxel.
+/// </summary>
+/// <param name="Img">Vector de la imagen.</param>
+/// <param name="Width">Anchura de la imagen.</param>
+/// <param name="Height">Altura de la imagen.</param>
+/// <returns>
+/// Devuelve el Img con el filtro aplicado.
+/// </returns>
+unsigned int* ASMOperation(unsigned int* Img, int Width, int Height) {
  
     for (int fila = 0; fila < Height; fila++) {
 
         for (int columna = 0; columna < Width; columna++) {
 
-            unsigned char value = ASMMedian(Img, 'R', fila, columna, Width, Height);
+            unsigned char value = ASMMedian(Img, fila, columna, Width, Height);
             Img[AdaptCoords(fila, columna, Width, Height)] = value;
-
         }
     }
 
     return Img;
-
 }
 
 unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
@@ -122,7 +155,6 @@ void Results(double CppTime, double AsmTime, double SseTime) {
         << "Assembly Time: " << AsmTime << endl
         << "SSE Time: " << SseTime << endl << endl
         << (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE")) << " time is faster" << endl;
-
 }
 
 unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height) {
@@ -157,20 +189,22 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
 
 }
 
-unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, int Width, int Height) {
-    const int tam = Width * Height;
+/// <summary>
+/// Cálculo de la mediana de los valores
+/// adyacentes un cada píxel
+/// </summary>
+/// <param name="Img">Vector de la imagen.</param>
+/// <param name="x">Fila de la matriz.</param>
+/// <param name="y">Columna de la matriz.</param>
+/// <param name="Width">Anchura de la imagen.</param>
+/// <param name="Height">Altura de la imagen.</param>
+/// <returns>
+/// Devuelve el valor de la mediana de un píxel.
+/// </returns>
+unsigned int ASMMedian(unsigned int* Img, int x, int y, int Width, int Height) {
     int AdjacentValuesSize = 0;
 
-    unsigned int* Img = new unsigned int[tam];
     unsigned int* AdjacentValues = new unsigned int[9];
-
-    //***CALCULO DE LA MEDIANA DE UNA COMPONENTE MATRICIAL***
-
-    //Casting solo posible en C++
-    for (int i = 0;i < tam;i++)
-    {
-        Img[i] = ImgChar[i];
-    }
 
     //Variables para el entorno de ASM
 
@@ -196,14 +230,14 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
     int posImg = 0;
 
     _asm {
-        ;;Cálculo de los valores adjacentes a un píxel
+        ;; Cálculo de los valores adjacentes a un píxel
         ValuesAdjacent:
         mov eax, x
-            mov xIni, eax
-            sub xIni, 1
-            mov xFin, eax
-            add xFin, 1
-            mov edx, xFin
+        mov xIni, eax
+        sub xIni, 1
+        mov xFin, eax
+        add xFin, 1
+        mov edx, xFin
 
             bucleExt1 :
             cmp xIni, edx
@@ -215,147 +249,151 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             add yFin, 1
             mov ecx, yFin
 
-            bucleInt1 :
-            cmp yIni, ecx
-            jg finBucleInt1
+                bucleInt1 :
+                cmp yIni, ecx
+                jg finBucleInt1
 
-            ;;Permite obtener la posición
-            AdaptCoords :
-            mov eax, xIni
-            mov ebx, yIni
-            cmp eax, 0
-            jl superaLimites
-            cmp ebx, 0
-            jl superaLimites
-            cmp eax, Height
-            jge superaLimites
-            cmp ebx, Width
-            jge superaLimites
+                ;; Permite obtener la posición que ocuparía
+                ;; el elemento de la matriz x y en Img
+                AdaptCoords :
+                mov eax, xIni
+                mov ebx, yIni
+                cmp eax, 0
+                jl superaLimites
+                cmp ebx, 0
+                jl superaLimites
+                cmp eax, Height
+                jge superaLimites
+                cmp ebx, Width
+                jge superaLimites
 
-            mov eax, Width
-            mul xIni
-            mov ecx, Height
-            sub ecx, ebx
-            sub ecx, 1
-            add eax, ecx
-            jmp finAdaptCoords
+                mov eax, Width
+                mul xIni
+                mov ecx, Height
+                sub ecx, ebx
+                sub ecx, 1
+                add eax, ecx
+                jmp finAdaptCoords
 
-            superaLimites :
-            mov eax, -1
-            jmp finAdaptCoords
+                superaLimites :
+                mov eax, -1
+                jmp finAdaptCoords
 
-            finAdaptCoords :
-            mov pos, eax
+                finAdaptCoords :
+                mov pos, eax
 
-            cmp pos, -1
-            je incYIni
-            mov ecx, Img
-            mov eax, pos
-            mov ebx, tamElem
-            mul ebx
-            add ecx, eax
-            mov edx, [ecx]
-            mov posImg, edx
+                ;; Comprobación de si la posición esta fuera
+                ;; de los límites de la matriz
+                cmp pos, -1
+                je incYIni
+                mov ecx, Img
+                mov eax, pos
+                mov ebx, tamElem
+                mul ebx
+                add ecx, eax
+                mov edx, [ecx]
+                mov posImg, edx
 
-            mov eax, AdjacentValuesSize
-            mov ebx, tamElem
-            mul ebx
-            mov ecx, AdjacentValues
-            add ecx, eax
-            mov edx, posImg
-            mov[ecx], edx
-            add AdjacentValuesSize, 1
-            jmp incYIni
+                mov eax, AdjacentValuesSize
+                mov ebx, tamElem
+                mul ebx
+                mov ecx, AdjacentValues
+                add ecx, eax
+                mov edx, posImg
+                mov[ecx], edx
+                add AdjacentValuesSize, 1
+                jmp incYIni
 
-            incYIni :
-            add yIni, 1
-            mov ecx, yFin
-            jmp bucleInt1
+                incYIni :
+                add yIni, 1
+                mov ecx, yFin
+                jmp bucleInt1
 
-            finBucleInt1 :
-            add xIni, 1
-            mov edx, xFin
-            jmp bucleExt1
+                finBucleInt1 :
+                add xIni, 1
+                mov edx, xFin
+                jmp bucleExt1
 
             finBucleExt1 :
             jmp finValuesAdjacent
 
-            finValuesAdjacent :
-            jmp bubbleSort
+        finValuesAdjacent :
+        jmp bubbleSort
 
-            ;Algoritmo de ordenación de la burbuja
-            bubbleSort :
-            mov i, 2
-            mov j, 0
-            mov edx, 2
-            mov ecx, 0
-            sub AdjacentValuesSize, 1
+        ;; Algoritmo de ordenación de la burbuja
+        bubbleSort :
+        mov i, 2
+        mov j, 0
+        mov edx, 2
+        mov ecx, 0
+        sub AdjacentValuesSize, 1
 
             bucleExt2 :
             cmp edx, AdjacentValuesSize
             je finBucleExt2
             mov eax, AdjacentValues
             mov ecx, 0
-            bucleInt2 :
 
-            cmp ecx, AdjacentValuesSize
-            je finBucleInt2
+                bucleInt2 :
+                cmp ecx, AdjacentValuesSize
+                je finBucleInt2
 
-            mov ebx, [eax]
-            mov elem, ebx
-            mov dirMemoria, eax
-            add eax, tamElem
-            mov dirMemoriaSig, eax
-            mov ebx, [eax]
-            mov elemSig, ebx
-            mov ebx, elem
-            cmp ebx, elemSig
-            ;;Si el elemSig es mayor que el anterior se intercambiaran
-            ;;sus posiciones en el vector
-            jg Swap
+                mov ebx, [eax]
+                mov elem, ebx
+                mov dirMemoria, eax
+                add eax, tamElem
+                mov dirMemoriaSig, eax
+                mov ebx, [eax]
+                mov elemSig, ebx
+                mov ebx, elem
+                cmp ebx, elemSig
+                ;; Si el elemSig es mayor que el anterior se intercambiaran
+                ;; sus posiciones en el vector
+                jg Swap
 
-            noSwap :
-            inc ecx
-            jmp bucleInt2
+                noSwap :
+                inc ecx
+                jmp bucleInt2
 
-            Swap :
-            inc ecx
-            mov j, ecx
-            mov i, edx
-            mov ebx, dirMemoria
-            mov ecx, elem
-            mov edx, elemSig
-            mov[eax], ecx
-            mov[ebx], edx
-            mov ecx, j
-            mov edx, i
-            mov eax, dirMemoriaSig
-            jmp bucleInt2
+                Swap :
+                inc ecx
+                mov j, ecx
+                mov i, edx
+                mov ebx, dirMemoria
+                mov ecx, elem
+                mov edx, elemSig
+                mov[eax], ecx
+                mov[ebx], edx
+                mov ecx, j
+                mov edx, i
+                mov eax, dirMemoriaSig
+                jmp bucleInt2
 
-            finBucleInt2 :
-            inc edx
-            jmp bucleExt2
+                finBucleInt2 :
+                inc edx
+                jmp bucleExt2
 
             finBucleExt2 :
             jmp finBubbleSort
 
-            finBubbleSort :
-            jmp Mediana
+        finBubbleSort :
+        jmp Mediana
 
-            ;;Cálculo de la Mediana de los valores de un vector
-            Mediana :
-            add AdjacentValuesSize, 1
-            mov ecx, AdjacentValues
-            mov eax, AdjacentValuesSize
-            mov edx, 0
-            mov ebx, 2
+        ;; Cálculo de la Mediana de los valores de un vector
+        Mediana :
+        add AdjacentValuesSize, 1
+        mov ecx, AdjacentValues
+        mov eax, AdjacentValuesSize
+        mov edx, 0
+        mov ebx, 2
 
-            div ebx
-            mov ebx, 0
-            cmp edx, ebx
-            ;;Dependiendo si el tamaño del vector es par o impar el cálculo es distinto
-            je esPar
-            jne esImpar
+        div ebx
+        mov ebx, 0
+        cmp edx, ebx
+        ;; Dependiendo si el tamaño del vector es par o impar
+        ;; el cálculo de la mediana es distinto
+        je esPar
+        jne esImpar
 
             esImpar :
             mov ebx, tamElem
@@ -372,29 +410,29 @@ unsigned char ASMMedian(unsigned char* ImgChar, char component, int x, int y, in
             mov edx, [ecx]
             mov mediana, edx
 
-            sub ecx, tamElem
-            mov edx, [ecx]
-            mov mediana2, edx
+        sub ecx, tamElem
+        mov edx, [ecx]
+        mov mediana2, edx
 
-            mov ebx, mediana
-            mov ecx, mediana2
-            add ecx, ebx
-            mov mediana3, ecx
+        mov ebx, mediana
+        mov ecx, mediana2
+        add ecx, ebx
+        mov mediana3, ecx
 
-            mov edx, 0
-            mov ebx, 2
-            mov eax, mediana3
+        mov edx, 0
+        mov ebx, 2
+        mov eax, mediana3
 
-            div ebx
-            mov mediana, eax
-            jmp finMediana
+        div ebx
+        mov mediana, eax
+        jmp finMediana
 
-            finMediana :
-            mov eax, mediana
-            mov medianaTotal, eax
+        finMediana :
+        mov eax, mediana
+        mov medianaTotal, eax
     }
 
-    return (unsigned char)medianaTotal;
+    return medianaTotal;
 }
 
 unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, int Width, int Height) {
