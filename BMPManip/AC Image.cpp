@@ -118,6 +118,28 @@ unsigned char* ASMOperation(unsigned char* Img, int Width, int Height) {
 }
 
 void SSEOperation(unsigned char** Img, unsigned char* vectorImg, int Width, int Height) {
+    // Calculo del filtro de mediana usando CPP
+    for (int fila = 0; fila < Height; fila++) {
+
+        for (int columna = 0; columna < Width; columna++) {
+
+            if (fila == 0 || fila == Width-1) {
+                
+                unsigned char value = Median(vectorImg, 'R', fila, columna, Width, Height);
+                vectorImg[AdaptCoords(fila, columna, Width, Height)] = value;
+            }
+            else if (columna == 0 || columna == Height-1) {
+                
+                unsigned char value = Median(vectorImg, 'R', fila, columna, Width, Height);
+                vectorImg[AdaptCoords(fila, columna, Width, Height)] = value;
+            }
+            // Son posiciones centrales de la imagen (se calculan con instrucciones SSE)
+            else {
+                vectorImg[AdaptCoords(fila, columna, Width, Height)] = -1;
+            }
+        }
+    }
+
     // Valores adyacentes (de 16 pixeles)
     unsigned char** adj = new unsigned char* [9];   // La mediana usa 9 elementos
     for (size_t i = 0; i < 9; i++) {
