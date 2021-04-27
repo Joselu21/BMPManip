@@ -162,7 +162,7 @@ Image Image::AdaptToGrayScale(const Image& Img) {
 }
 
 
-unsigned char* Image::Order() {
+unsigned char* Image::ToArray() const{
 
     unsigned char* Img = new unsigned char[(size_t)(this->Width) * (size_t)(this->Height)];
 
@@ -170,7 +170,9 @@ unsigned char* Image::Order() {
 
         for (int j = 0; j < this->Width; j++) {
 
-            Img[i * this->Height + j] = this->RetrieveValue('R', i, j);
+            int x1 = i * Width;
+            int y1 = Height - j - 1;
+            Img[x1+y1] = this->RetrieveValue('R', i, j);
 
         }
 
@@ -178,4 +180,36 @@ unsigned char* Image::Order() {
 
     return Img;
 
+}
+
+void Image::FromArray(unsigned char* Img, int Width, int Height){
+
+    for (int fila = 0; fila < Height; fila++) {
+
+        for (int columna = 0; columna < Width; columna++) {
+
+            unsigned char value = Img[Image::AdaptCoords(fila, columna, Width, Height)];
+            this->RedComponent[Image::AdaptCoords(fila, columna, Width, Height)] = value;
+            this->GreenComponent[Image::AdaptCoords(fila, columna, Width, Height)] = value;
+            this->BlueComponent[Image::AdaptCoords(fila, columna, Width, Height)] = value;
+
+        }
+    }
+
+}
+
+int Image::AdaptCoords(int x, int y)
+{
+    return Image::AdaptCoords(x, y, this->Width, this->Height);
+}
+
+int Image::AdaptCoords(int x, int y, int Width, int Height)
+{
+    if (x < 0 || x >= Height || y < 0 || y >= Width) {
+        return -1;
+    }
+
+    int x1 = x * Width;
+    int y1 = Height - y - 1;
+    return x1 + y1;
 }

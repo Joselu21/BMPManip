@@ -31,18 +31,18 @@ int main(int argc, char** argv) {
     try {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
-        unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).Order();
+        unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).ToArray();
 
         
         /**********************************
         **_Código de la operación en C++_**
         ***********************************/
-
+        
         auto begin = chrono::high_resolution_clock::now();        
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
         double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
+        
 
         /**********************************
         **_Código de la operación en ASM_**
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 
         // Casting a un array de tipo unsigned int para facilitar
         // el manejo del vector GreyScale en asm
-        unsigned int* Img = new unsigned int[Imagen.Width*Imagen.Height];
+        /*unsigned int* Img = new unsigned int[Imagen.Width*Imagen.Height];
         for (int i = 0;i < Imagen.Width * Imagen.Height;i++)
         {
             Img[i] = GreyScale[i];
@@ -62,24 +62,26 @@ int main(int argc, char** argv) {
         for (int i = 0;i < Imagen.Width * Imagen.Height; i++)
         {
             GreyScale[i] = Asm[i];
-        }
-        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        }*/
+        //double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
 
         /**********************************
         **_Código de la operación en ASM_**
         ***********************************/
-        
+        /*
         begin = chrono::high_resolution_clock::now();
         unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
-        end = chrono::high_resolution_clock::now();
-        double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        end = chrono::high_resolution_clock::now();*/
+        //double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
         
-
+         
+    
+        Imagen.FromArray(GreyScale, Imagen.Width, Imagen.Height);
         Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
         
-        Results(CppTime, AsmTime, SseTime);
+        //Results(CppTime, AsmTime, SseTime);
     }
     catch (runtime_error Ex) {
 
@@ -98,7 +100,7 @@ unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
         for (int columna = 0; columna < Width; columna++) {
 
             unsigned char value = Median(Img, 'R', fila, columna, Width, Height);
-            Img[AdaptCoords(fila, columna, Width, Height)] = value;
+            Img[Image::AdaptCoords(fila, columna, Width, Height)] = value;
 
         }
     }
@@ -124,7 +126,7 @@ unsigned int* ASMOperation(unsigned int* Img, int Width, int Height) {
         for (int columna = 0; columna < Width; columna++) {
 
             unsigned char value = ASMMedian(Img, fila, columna, Width, Height);
-            Img[AdaptCoords(fila, columna, Width, Height)] = value;
+            Img[Image::AdaptCoords(fila, columna, Width, Height)] = value;
         }
     }
 
@@ -138,7 +140,7 @@ unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
         for (int columna = 0; columna < Width; columna++) {
 
             unsigned char value = SSEMedian(Img, 'R', fila, columna, Width, Height);
-            Img[AdaptCoords(fila, columna, Width, Height)] = value;
+            Img[Image::AdaptCoords(fila, columna, Width, Height)] = value;
 
         }
     }
@@ -166,7 +168,7 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
 
         for (int y1 = y - 1; y1 <= y + 1; y1++) {
 
-            unsigned char pos = AdaptCoords(x1, y1, Width, Height);
+            unsigned char pos = Image::AdaptCoords(x1, y1, Width, Height);
 
             if (pos != -1) {
                 AdjacentValues[AdjacentValuesSize] = Img[pos];
@@ -444,7 +446,7 @@ unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, in
 
         for (int y1 = y - 1; y1 <= y + 1; y1++) {
 
-            unsigned char pos = AdaptCoords(x1, y1, Width, Height);
+            unsigned char pos = Image::AdaptCoords(x1, y1, Width, Height);
 
             if (pos != -1) {
                 AdjacentValues[AdjacentValuesSize] = ImgChar[pos];
@@ -465,17 +467,6 @@ unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, in
         return AdjacentValues[(AdjacentValuesSize / 2)];
     }
 
-}
-
-int AdaptCoords(int x, int y, int Width, int Height)
-{
-    if (x < 0 || x >= Height || y < 0 || y >= Width) {
-        return -1;
-    }
-
-    int x1 = x * Width;
-    int y1 = Height - y - 1;
-    return x1 + y1;
 }
 
 void BubbleSort(unsigned char* arr, int n) {

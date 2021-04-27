@@ -91,10 +91,24 @@ class Image {
 
         /**
          * @brief
-         * @param Img
          * @return
         */
-        unsigned char* Order();
+        unsigned char* ToArray() const;
+
+        /**
+        * @brief
+        */
+        void FromArray(unsigned char* Img, int, int);
+
+        /**
+        * @brief
+        */
+        void FromArray(unsigned int* Img, int, int);
+
+        /**
+         * @brief 
+        */
+        int AdaptCoords(int x, int y);
 
         /**
          * @brief Static method to read a BMP file and return an Image object storing all the information.
@@ -107,6 +121,13 @@ class Image {
          * @brief Method used to populate the GreyComponent vector.
         */
         static Image AdaptToGrayScale(const Image& Img);
+
+        /**
+         * @brief Static method to read a BMP file and return an Image object storing all the information.
+         * @param filePath The path to the file to be read.
+         * @return Image object that contains all the information of the given image path.
+        */
+        static int AdaptCoords(int x, int y, int Width, int Height);
 
 };
 
