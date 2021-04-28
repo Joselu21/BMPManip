@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         auto begin = chrono::high_resolution_clock::now();        
         auto Cpp = CPPOperation(CPPImage, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
-        double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        double CppTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
         /**********************************
         **_Código de la operación en ASM_**
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
         ASMOperation(Img, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
 
-        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        double AsmTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
 
         /**********************************
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         begin = chrono::high_resolution_clock::now();
         SSEOperation(SSEMatrix, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        double SseTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
         /************************
         **_Salida del programa_**
