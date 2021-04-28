@@ -20,7 +20,8 @@ int main(int argc, char** argv) {
 
     if (argc < 2) {
 
-        cerr << "Incorrect number of parameters. Expected: 3, Obtained: " << argc << endl;
+        cerr << "Incorrect number of parameters. Expected: >=2, Obtained: " << argc << endl;
+        system("pause");
         return -1;
     }
 
@@ -37,7 +38,7 @@ int main(int argc, char** argv) {
         auto begin = chrono::high_resolution_clock::now();        
         auto Cpp = CPPOperation(CPPImage, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
-        double CppTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         /**********************************
         **_Código de la operación en ASM_**
@@ -55,7 +56,7 @@ int main(int argc, char** argv) {
         ASMOperation(Img, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
 
-        double AsmTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
 
         /**********************************
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
         begin = chrono::high_resolution_clock::now();
         SSEOperation(SSEMatrix, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        double SseTime = chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         /************************
         **_Salida del programa_**
@@ -78,6 +79,9 @@ int main(int argc, char** argv) {
         Imagen.WriteBMP((char*)(OutputPath));
         
         Results(CppTime, AsmTime, SseTime);
+
+        system("pause");
+
     }
     catch (runtime_error Ex) {
 
@@ -325,7 +329,7 @@ FinBubble1 :
 void Results(double CppTime, double AsmTime, double SseTime) {
 
     cout << "The program has terminated correctly." << endl
-        << "These are the results: " << endl
+        << "These are the results in microseconds (10^-6): " << endl
         << "C++ Time: " << CppTime << endl
         << "Assembly Time: " << AsmTime << endl
         << "SSE Time: " << SseTime << endl << endl
