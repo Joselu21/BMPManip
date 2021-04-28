@@ -12,9 +12,7 @@ Image::Image(int w, int h) {
 
 Image::Image(unsigned char* Grey, int Width, int Height) {
 
-    this->Width = Width;
-    this->Height = Height;
-    // TODO
+    Image::FromArray(Grey, Width, Height);
 
 }
 
@@ -182,7 +180,7 @@ unsigned char* Image::ToArray() const{
 
 }
 
-unsigned char** Image::MyToArray() const {
+unsigned char** Image::ToMatrix() const {
 
     unsigned char** Img = new unsigned char* [(size_t)(this->Height + 2)];
     for (size_t i = 0; i < this->Height + 2; i++) {

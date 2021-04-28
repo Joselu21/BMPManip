@@ -1,7 +1,6 @@
 #include "Headers/BMPManip.h"
 #include <ctime>
 #include <algorithm>
-#include <Windows.h>
 #include <chrono>
 
 constexpr auto OutputPath = "Output\\output.bmp";
@@ -11,16 +10,11 @@ using namespace std;
 int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
 unsigned int* ASMOperation(unsigned int*, int, int);
-void SSEOperation(unsigned char**, unsigned char*, int, int);
-void Results(double, double, double);
-unsigned char Median(unsigned char*, char, int, int, int, int);
-//int AdaptCoords(int, int, int, int);
-void BubbleSort(unsigned char*, int);
-//void BubbleSortSSE(unsigned char*, int);
+unsigned char* SSEOperation(unsigned char**, int, int);
+unsigned char Median(unsigned char*, int, int, int, int);
 unsigned int ASMMedian(unsigned int*, int, int, int, int);
-//unsigned char SSEMedian(unsigned char*, char, int, int, int, int);
-void printImg(unsigned char** img, int w, int h);
-void printImg(unsigned char* img, int w, int h);
+void BubbleSort(unsigned char*, int);
+void Results(double, double, double);
 
 int main(int argc, char** argv) {
 
@@ -33,66 +27,57 @@ int main(int argc, char** argv) {
     try {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
-        unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).ToArray();
-        // Aqui se escribe el resultado SSE
-        unsigned char* SSEGreyScale = Image::AdaptToGrayScale(Imagen).ToArray();
-        // Usa este para calcular el filtro de mediana SSE
-        unsigned char** SSEMatrix = Image::AdaptToGrayScale(Imagen).MyToArray();
         
         /**********************************
         **_Código de la operación en C++_**
         ***********************************/
         
+        unsigned char* CPPImage = Image::AdaptToGrayScale(Imagen).ToArray();
+
         auto begin = chrono::high_resolution_clock::now();        
-        unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
+        auto Cpp = CPPOperation(CPPImage, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
         double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        cout << "CPP Time: " << CppTime << endl;
-
-        //cout << "GreyScale (vector) tras el filtro:" << endl;
-        //printImg(GreyScale, Imagen.Width, Imagen.Height);
 
         /**********************************
         **_Código de la operación en ASM_**
         ***********************************/
 
         // Casting a un array de tipo unsigned int para facilitar
-        // el manejo del vector GreyScale en asm
-        /*unsigned int* Img = new unsigned int[Imagen.Width*Imagen.Height];
-        for (int i = 0;i < Imagen.Width * Imagen.Height;i++)
+        // el manejo del vector CPPImage en asm
+        unsigned int* Img = new unsigned int[Imagen.Width * Imagen.Height];
+        for (int i = 0; i < Imagen.Width * Imagen.Height; i++)
         {
-            Img[i] = GreyScale[i];
+            Img[i] = CPPImage[i];
         }
 
         begin = chrono::high_resolution_clock::now();
-        unsigned int* Asm = ASMOperation(Img, Imagen.Width, Imagen.Height);
+        ASMOperation(Img, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
-        for (int i = 0;i < Imagen.Width * Imagen.Height; i++)
-        {
-            GreyScale[i] = Asm[i];
-        }*/
-        //double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+        double AsmTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
 
         /**********************************
         **_Código de la operación en SSE_**
         ***********************************/
-        
+       
+        // Usa este para calcular el filtro de mediana SSE
+        unsigned char** SSEMatrix = Image::AdaptToGrayScale(Imagen).ToMatrix();
+
         begin = chrono::high_resolution_clock::now();
-        SSEOperation(SSEMatrix, SSEGreyScale, Imagen.Width, Imagen.Height);
+        SSEOperation(SSEMatrix, Imagen.Width, Imagen.Height);
         end = chrono::high_resolution_clock::now();
         double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        cout << "SSE Time: " << SseTime << endl;
-        //cout << "MyGreyScale (matriz) tras filtro:" << endl;
-        //printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
-        //cout << "SSEGreyScale (vector) tras filtro:" << endl;
-        //printImg(SSEGreyScale, Imagen.Width, Imagen.Height);
 
-        Imagen.FromArray(SSEGreyScale, Imagen.Width, Imagen.Height);
+        /************************
+        **_Salida del programa_**
+        *************************/
+
+        Imagen.FromArray(Cpp, Imagen.Width, Imagen.Height);
         Imagen.WriteBMP((char*)(OutputPath));
-        ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
         
-        //Results(CppTime, AsmTime, SseTime);
+        Results(CppTime, AsmTime, SseTime);
     }
     catch (runtime_error Ex) {
 
@@ -104,32 +89,36 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+/**
+ * @brief Median Filter in C++.
+ * @param Img Array with pixel data.
+ * @param w Width of the image.
+ * @param h Height of the image.
+ * @return Array with new pixel data, after the filter is done.
+*/
 unsigned char* CPPOperation(unsigned char* Img, int Width, int Height){
 
     for (int fila = 0; fila < Height; fila++) {
 
         for (int columna = 0; columna < Width; columna++) {
 
-            unsigned char value = Median(Img, 'R', fila, columna, Width, Height);
+            unsigned char value = Median(Img, fila, columna, Width, Height);
             Img[Image::AdaptCoords(fila, columna, Width, Height)] = value;
 
         }
     }
 
     return Img;
-    
+
 }
 
-/// <summary>
-/// Función encargada de recorrer el array Img y
-/// realizar la llamada a ASMMedian con cada píxel.
-/// </summary>
-/// <param name="Img">Vector de la imagen.</param>
-/// <param name="Width">Anchura de la imagen.</param>
-/// <param name="Height">Altura de la imagen.</param>
-/// <returns>
-/// Devuelve el Img con el filtro aplicado.
-/// </returns>
+/**
+ * @brief Median Filter in ASM-x86.
+ * @param Img Array with pixel data.
+ * @param w Width of the image.
+ * @param h Height of the image.
+ * @return Array with new pixel data, after the filter is done.
+*/
 unsigned int* ASMOperation(unsigned int* Img, int Width, int Height) {
  
     for (int fila = 0; fila < Height; fila++) {
@@ -142,9 +131,17 @@ unsigned int* ASMOperation(unsigned int* Img, int Width, int Height) {
     }
 
     return Img;
+
 }
 
-void SSEOperation(unsigned char** Img, unsigned char* vectorImg, int Width, int Height) {
+/**
+ * @brief Median Filter in C++.
+ * @param Img Matrix with pixel data.
+ * @param w Width of the image.
+ * @param h Height of the image.
+ * @return Array with new pixel data, after the filter is done.
+*/
+unsigned char* SSEOperation(unsigned char** Img, int Width, int Height) {
 
     unsigned char** adj = new unsigned char* [9];   // La mediana usa 9 elementos
     for (size_t i = 0; i < 9; i++) {
@@ -155,8 +152,8 @@ void SSEOperation(unsigned char** Img, unsigned char* vectorImg, int Width, int 
             adj[i][j] = 1;
         }
     }
-    UINT32 ochenta = 0x80808080;
-    UINT32* punt = &ochenta;
+    uint32_t ochenta = 0x80808080;
+    uint32_t *punt = &ochenta;
 
     _asm {
         mov eax, Height;
@@ -311,13 +308,20 @@ FinBubble1 :
     }
 
     // Juntar:
+    /*
     for (int fila = 0; fila < Height - 1; fila++) {
         for (int columna = 0; columna < Width - 1; columna++) {
             vectorImg[Image::AdaptCoords(fila, columna, Width, Height)] = Img[fila + 1][columna + 1];
         }
-    }
+    }*/
 }
 
+/**
+ * @brief Function to print the results of the time.
+ * @param CppTime Time consumed by the median filter in C++.
+ * @param AsmTime Time consumed by the median filter in Asm.
+ * @param SseTime Time consumed by the median filter in Sse.
+*/
 void Results(double CppTime, double AsmTime, double SseTime) {
 
     cout << "The program has terminated correctly." << endl
@@ -328,7 +332,16 @@ void Results(double CppTime, double AsmTime, double SseTime) {
         << (CppTime < AsmTime ? (CppTime < SseTime ? "C++" : "SSE") : (AsmTime < SseTime ? "ASM" : "SSE")) << " time is faster" << endl;
 }
 
-unsigned char Median(unsigned char* Img, char component, int x, int y, int Width, int Height) {
+/**
+ * @brief Function to calculate the median of a pixel in C++.
+ * @param Img Full image data.
+ * @param x X Coord.
+ * @param y Y Coord.
+ * @param w Width of the image.
+ * @param h Height of the image.
+ * @return Median calculated.
+*/
+unsigned char Median(unsigned char* Img, int x, int y, int Width, int Height) {
     
     unsigned char* AdjacentValues = new unsigned char[9];
     int AdjacentValuesSize = 0;
@@ -337,7 +350,7 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
 
         for (int y1 = y - 1; y1 <= y + 1; y1++) {
 
-            unsigned char pos = Image::AdaptCoords(x1, y1, Width, Height);
+            int pos = Image::AdaptCoords(x1, y1, Width, Height);
 
             if (pos != -1) {
                 AdjacentValues[AdjacentValuesSize] = Img[pos];
@@ -348,30 +361,32 @@ unsigned char Median(unsigned char* Img, char component, int x, int y, int Width
 
     BubbleSort(AdjacentValues, AdjacentValuesSize);
 
+    int value;
     if (AdjacentValuesSize % 2 == 0) {
 
-        return AdjacentValues[(AdjacentValuesSize / 2) - 1] + AdjacentValues[(AdjacentValuesSize / 2)] / 2;
+        value = AdjacentValues[(AdjacentValuesSize / 2) - 1] + AdjacentValues[(AdjacentValuesSize / 2)] / 2;
 
     }
     else {
 
-        return AdjacentValues[(AdjacentValuesSize/ 2)];
+        value = AdjacentValues[(AdjacentValuesSize/ 2)];
+
     }
+
+    delete[] AdjacentValues;
+    return value;
 
 }
 
-/// <summary>
-/// Cálculo de la mediana de los valores
-/// adyacentes un cada píxel
-/// </summary>
-/// <param name="Img">Vector de la imagen.</param>
-/// <param name="x">Fila de la matriz.</param>
-/// <param name="y">Columna de la matriz.</param>
-/// <param name="Width">Anchura de la imagen.</param>
-/// <param name="Height">Altura de la imagen.</param>
-/// <returns>
-/// Devuelve el valor de la mediana de un píxel.
-/// </returns>
+/**
+ * @brief Function to calculate the median of a pixel in C++.
+ * @param Img Full image data.
+ * @param x X Coord.
+ * @param y Y Coord.
+ * @param w Width of the image.
+ * @param h Height of the image.
+ * @return Median calculated.
+*/
 unsigned int ASMMedian(unsigned int* Img, int x, int y, int Width, int Height) {
     int AdjacentValuesSize = 0;
 
@@ -603,41 +618,15 @@ unsigned int ASMMedian(unsigned int* Img, int x, int y, int Width, int Height) {
         mov medianaTotal, eax
     }
 
+    delete[] AdjacentValues;
     return medianaTotal;
 }
-/*
-unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, int Width, int Height) {
 
-    unsigned char* AdjacentValues = new unsigned char[9];
-    int AdjacentValuesSize = 0;
-
-    for (int x1 = x - 1; x1 <= x + 1; x1++) {
-
-        for (int y1 = y - 1; y1 <= y + 1; y1++) {
-
-            unsigned char pos = Image::AdaptCoords(x1, y1, Width, Height);
-
-            if (pos != -1) {
-                AdjacentValues[AdjacentValuesSize] = ImgChar[pos];
-                AdjacentValuesSize++;
-            }
-        }
-    }
-
-    BubbleSortSSE(AdjacentValues, AdjacentValuesSize);
-
-    if (AdjacentValuesSize % 2 == 0) {
-
-        return AdjacentValues[(AdjacentValuesSize / 2) - 1] + AdjacentValues[(AdjacentValuesSize / 2)] / 2;
-
-    }
-    else {
-
-        return AdjacentValues[(AdjacentValuesSize / 2)];
-    }
-
-}*/
-
+/**
+ * @brief BubbleSort algorithm to order some data
+ * @param arr Data to be ordered
+ * @param n Size of the array
+*/
 void BubbleSort(unsigned char* arr, int n) {
 
     for (int i = 0; i < n - 1; i++) {
@@ -653,29 +642,4 @@ void BubbleSort(unsigned char* arr, int n) {
             }
         }
     }
-}
-
-// Para pruebas
-
-void printImg(unsigned char** img, int w, int h)
-{
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            printf("%d ", img[i][j]);
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void printImg(unsigned char* img, int w, int h)
-{
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            unsigned char val = img[Image::AdaptCoords(i, j, w, h)];
-            printf("%d ", val);
-        }
-        cout << endl;
-    }
-    cout << endl;
 }

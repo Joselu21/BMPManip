@@ -63,6 +63,12 @@ class Image {
         */
         Image(int w, int h);
 
+        /**
+         * @brief Constructor of the Image class with array of data from a grey image and the size
+         * @param Grey Array of pixel data
+         * @param Width Width of the image.
+         * @param Height Height of the image.
+        */
         Image(unsigned char* Grey, int Width, int Height);
 
         /**
@@ -90,29 +96,31 @@ class Image {
         void WriteBMP(const std::string& filePath) const;
 
         /**
-         * @brief
-         * @return
+         * @brief Method that converts a single greyscaled image to a primitive array.
+         * @return Array with the pixel data.
         */
         unsigned char* ToArray() const;
 
         /**
-         * @brief Versión que devuelve una matriz con un marco de 1px extra en lugar de un vector
-         * @return
+         * @brief Method that converts a single greyscaled image to a primitive matrix.
+         * @return Matrix with ordered pixel data.
         */
-        unsigned char** MyToArray() const;
+        unsigned char** ToMatrix() const;
 
         /**
-        * @brief
+         * @brief Method that changed instance information stored by the values given.
+         * @param Img Array with the pixel data.
+         * @param Width Width of the image.
+         * @param Height Height of the image.
         */
-        void FromArray(unsigned char* Img, int, int);
+        void FromArray(unsigned char* Img, int Width, int Height);
+
 
         /**
-        * @brief
-        */
-        void FromArray(unsigned int* Img, int, int);
-
-        /**
-         * @brief 
+         * @brief Coordinates adapter to the in-class specific order or the BMP pixel store order.
+         * @param x X Coord.
+         * @param y Y Coord.
+         * @return Integer that represents the position in the in-class array.
         */
         int AdaptCoords(int x, int y);
 
@@ -125,13 +133,18 @@ class Image {
 
         /**
          * @brief Method used to populate the GreyComponent vector.
+         * @param Img Image class to be adapted to grayscale.
+         * @return The Image object grayscaled.
         */
         static Image AdaptToGrayScale(const Image& Img);
 
         /**
-         * @brief Static method to read a BMP file and return an Image object storing all the information.
-         * @param filePath The path to the file to be read.
-         * @return Image object that contains all the information of the given image path.
+         * @brief Coordinates adapter to the in-class specific order or the BMP pixel store order.
+         * @param x X Coord.
+         * @param y Y Coord.
+         * @param w Width of the image.
+         * @param h Height of the image.
+         * @return Integer that represents the position in the in-class array.
         */
         static int AdaptCoords(int x, int y, int Width, int Height);
 
