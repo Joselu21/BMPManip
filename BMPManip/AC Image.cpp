@@ -11,14 +11,16 @@ using namespace std;
 int main(int argc, char** argv);
 unsigned char* CPPOperation(unsigned char*, int, int);
 unsigned int* ASMOperation(unsigned int*, int, int);
-unsigned char* SSEOperation(unsigned char*, int, int);
+void SSEOperation(unsigned char**, unsigned char*, int, int);
 void Results(double, double, double);
 unsigned char Median(unsigned char*, char, int, int, int, int);
-int AdaptCoords(int, int, int, int);
+//int AdaptCoords(int, int, int, int);
 void BubbleSort(unsigned char*, int);
-void BubbleSortSSE(unsigned char*, int);
+//void BubbleSortSSE(unsigned char*, int);
 unsigned int ASMMedian(unsigned int*, int, int, int, int);
-unsigned char SSEMedian(unsigned char*, char, int, int, int, int);
+//unsigned char SSEMedian(unsigned char*, char, int, int, int, int);
+void printImg(unsigned char** img, int w, int h);
+void printImg(unsigned char* img, int w, int h);
 
 int main(int argc, char** argv) {
 
@@ -32,7 +34,10 @@ int main(int argc, char** argv) {
 
         Image Imagen = Image::ReadBMP(string(argv[1]));
         unsigned char* GreyScale = Image::AdaptToGrayScale(Imagen).ToArray();
-
+        // Aqui se escribe el resultado SSE
+        unsigned char* SSEGreyScale = Image::AdaptToGrayScale(Imagen).ToArray();
+        // Usa este para calcular el filtro de mediana SSE
+        unsigned char** SSEMatrix = Image::AdaptToGrayScale(Imagen).MyToArray();
         
         /**********************************
         **_Código de la operación en C++_**
@@ -42,7 +47,10 @@ int main(int argc, char** argv) {
         unsigned char* Cpp = CPPOperation(GreyScale, Imagen.Width, Imagen.Height);
         auto end = chrono::high_resolution_clock::now();
         double CppTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        
+        cout << "CPP Time: " << CppTime << endl;
+
+        //cout << "GreyScale (vector) tras el filtro:" << endl;
+        //printImg(GreyScale, Imagen.Width, Imagen.Height);
 
         /**********************************
         **_Código de la operación en ASM_**
@@ -67,17 +75,20 @@ int main(int argc, char** argv) {
 
 
         /**********************************
-        **_Código de la operación en ASM_**
+        **_Código de la operación en SSE_**
         ***********************************/
-        /*
-        begin = chrono::high_resolution_clock::now();
-        unsigned char* Sse = SSEOperation(GreyScale, Imagen.Width, Imagen.Height);
-        end = chrono::high_resolution_clock::now();*/
-        //double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
         
-         
-    
-        Imagen.FromArray(GreyScale, Imagen.Width, Imagen.Height);
+        begin = chrono::high_resolution_clock::now();
+        SSEOperation(SSEMatrix, SSEGreyScale, Imagen.Width, Imagen.Height);
+        end = chrono::high_resolution_clock::now();
+        double SseTime = chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        cout << "SSE Time: " << SseTime << endl;
+        //cout << "MyGreyScale (matriz) tras filtro:" << endl;
+        //printImg(MyGreyScale, Imagen.Width + 2, Imagen.Height + 2);
+        //cout << "SSEGreyScale (vector) tras filtro:" << endl;
+        //printImg(SSEGreyScale, Imagen.Width, Imagen.Height);
+
+        Imagen.FromArray(SSEGreyScale, Imagen.Width, Imagen.Height);
         Imagen.WriteBMP((char*)(OutputPath));
         ShellExecute(0, 0, (const wchar_t*)OutputPath, 0, 0, SW_SHOW); // TODO
         
@@ -133,20 +144,178 @@ unsigned int* ASMOperation(unsigned int* Img, int Width, int Height) {
     return Img;
 }
 
-unsigned char* SSEOperation(unsigned char* Img, int Width, int Height) {
+void SSEOperation(unsigned char** Img, unsigned char* vectorImg, int Width, int Height) {
 
-    for (int fila = 0; fila < Height; fila++) {
-
-        for (int columna = 0; columna < Width; columna++) {
-
-            unsigned char value = SSEMedian(Img, 'R', fila, columna, Width, Height);
-            Img[Image::AdaptCoords(fila, columna, Width, Height)] = value;
-
+    unsigned char** adj = new unsigned char* [9];   // La mediana usa 9 elementos
+    for (size_t i = 0; i < 9; i++) {
+        adj[i] = new unsigned char[16]; // En un registro xmm caben 16
+    }
+    for (size_t i = 0; i < 9; i++) {
+        for (size_t j = 0; j < 16; j++) {
+            adj[i][j] = 1;
         }
     }
+    UINT32 ochenta = 0x80808080;
+    UINT32* punt = &ochenta;
 
-    return Img;
+    _asm {
+        mov eax, Height;
+        mov ebx, Width;
+        mov ecx, 0;       // Contador altura
+        mov edx, 0;       // Contador anchura
+        mov edi, Img
+        add edi, 4        // Saltamos la primera fila
 
+Bucle1:
+        mov esi, [edi];                 // Direccion de la fila
+        cmp eax, ecx;
+        jle Fin1;
+
+Bucle2:
+        cmp ebx, edx;
+        jle Fin2;
+
+        push esi;
+        mov esi, [edi - 4];
+        movdqu xmm0, [esi + edx];               // Cargamos el superior izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos el superior
+        movdqu xmm2, [esi + edx + 2];           // Cargamos el superior dcha
+        push edi;
+
+        mov esi, adj;
+        mov edi, [esi];
+        movdqu[edi], xmm0;                        // adj[0] = superiores izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm1;                        // adj[1] = superiores
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm2;                        // adj[2] = superiores dcha
+        pop edi;
+        pop esi;
+
+        // movdqu carga unaligned, ¿disminuye el rendimiento? ¿preferible movdqa?
+        movdqu xmm0, [esi + edx];               // Cargamos los adyacentes a izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos los 16 pixeles
+        movdqu xmm2, [esi + edx + 2];           // Cargamos los adyacentes a dcha
+
+        push esi;
+        push edi;
+        mov esi, adj;
+        add esi, 12;
+        mov edi, [esi];
+        movdqu[edi], xmm0;                        // adj[3] = adyacentes a izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm1;                        // adj[4] = pixeles actuales
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm2;                        // adj[5] = adyacentes dcha
+        pop edi;
+        pop esi;
+
+        push esi;
+        mov esi, [edi + 4];
+        movdqu xmm0, [esi + edx];               // Cargamos el superior izda
+        movdqu xmm1, [esi + edx + 1];           // Cargamos el superior
+        movdqu xmm2, [esi + edx + 2];           // Cargamos el superior dcha
+        push edi;
+
+        mov esi, adj;
+        add esi, 24;
+        mov edi, [esi];
+        movdqu[edi], xmm0;                        // adj[6] = inferiores izda
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm1;                        // adj[7] = inferiores
+        add esi, 4;
+        mov edi, [esi];
+        movdqu[edi], xmm2;                        // adj[8] = inferiores dcha
+        pop edi;
+        pop esi;
+
+// Custom BubbleSort
+        pushad
+            mov eax, 1;                 // eax = i = 1
+        mov ecx, 9;                 // tam del vector a ordenar
+BucleBubble1:
+        cmp ecx, eax;
+        jle FinBubble1              // i < tam
+            mov ebx, 0;                 // ebx = j = 0
+
+BucleBubble2:
+        mov esi, ecx;               // esi = ecx = tam
+        sub esi, eax;               // esi = tam - i
+        cmp esi, ebx;
+        jle FinBubble2;             // j < tam - i
+
+// Custom swap con SSE
+        push eax;
+        mov eax, punt;
+        movd xmm0, [eax];
+        shufps xmm0, xmm0, 0;
+        mov esi, adj;
+        mov edi, [esi + 4 * ebx];
+        movdqu xmm1, [edi];         // v[j]
+        add ebx, 1;
+        mov edi, [esi + 4 * ebx];
+        movdqu xmm2, [edi];         // v[j+1]
+
+        movdqa xmm3, xmm2;          // xmm3 = v[j+1]
+        paddb xmm3, xmm0;           // v[j+1] + 0x80
+        paddb xmm0, xmm1;           // v[j] + 0x80
+        pcmpgtb xmm0, xmm3;         // xmm0 = (v[j] > v[j+1])
+        pcmpeqd xmm3, xmm3;         // xmm3 todo a 1
+        pxor xmm3, xmm0;            // xmm3 = !(v[j] > v[j+1])
+        movdqa xmm4, xmm1;
+        pand xmm4, xmm0;            // v[j] AND (v[j]>v[j+1])
+        movdqa xmm5, xmm2;
+        pand xmm5, xmm3;            // v[j+1] AND !(v[j]>v[j+1])
+        por xmm4, xmm5;             // xmm4 v[j+1] despues de los swaps
+        pand xmm2, xmm0;            // v[j+1] AND (v[j]>v[j+1])
+        pand xmm3, xmm1;            // v[j] AND !(v[j]>v[j+1])
+        por xmm3, xmm2;             // xmm3 v[j] despues de los swaps
+
+        movdqu[edi], xmm4;
+        sub ebx, 1;
+        mov edi, [esi + 4 * ebx];
+        movdqu[edi], xmm3;
+        pop eax;
+// Fin Custom Swap
+
+        add ebx, 1;
+        jmp BucleBubble2
+
+FinBubble2 :
+        add eax, 1;
+        jmp BucleBubble1
+FinBubble1 :
+        mov eax, adj;
+        mov eax, [eax + 16];            // La posicion 4 (4*4=16) contiene las medianas
+        movdqu xmm0, [eax];             // Cargamos las 16 medianas
+        popad                           // Recuperamos registros anteriores a Bubblesort
+// End Custom BubbleSort
+
+        movdqu[esi + edx + 1], xmm0;   // Escribimos 16 medianas
+
+        add edx, 16;
+        jmp Bucle2;
+
+    Fin2:
+        xor edx, edx;                   // Contador de columnas a 0
+        add ecx, 1;                     // Contador filas + 1
+        add edi, 4;                     // Siguiente puntero filas
+        jmp Bucle1;
+
+    Fin1:
+    }
+
+    // Juntar:
+    for (int fila = 0; fila < Height - 1; fila++) {
+        for (int columna = 0; columna < Width - 1; columna++) {
+            vectorImg[Image::AdaptCoords(fila, columna, Width, Height)] = Img[fila + 1][columna + 1];
+        }
+    }
 }
 
 void Results(double CppTime, double AsmTime, double SseTime) {
@@ -436,7 +605,7 @@ unsigned int ASMMedian(unsigned int* Img, int x, int y, int Width, int Height) {
 
     return medianaTotal;
 }
-
+/*
 unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, int Width, int Height) {
 
     unsigned char* AdjacentValues = new unsigned char[9];
@@ -467,7 +636,7 @@ unsigned char SSEMedian(unsigned char* ImgChar, char component, int x, int y, in
         return AdjacentValues[(AdjacentValuesSize / 2)];
     }
 
-}
+}*/
 
 void BubbleSort(unsigned char* arr, int n) {
 
@@ -486,8 +655,27 @@ void BubbleSort(unsigned char* arr, int n) {
     }
 }
 
-void BubbleSortSSE(unsigned char* arr, int n) {
+// Para pruebas
 
+void printImg(unsigned char** img, int w, int h)
+{
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            printf("%d ", img[i][j]);
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
 
-
+void printImg(unsigned char* img, int w, int h)
+{
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            unsigned char val = img[Image::AdaptCoords(i, j, w, h)];
+            printf("%d ", val);
+        }
+        cout << endl;
+    }
+    cout << endl;
 }

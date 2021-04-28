@@ -96,6 +96,12 @@ class Image {
         unsigned char* ToArray() const;
 
         /**
+         * @brief Versión que devuelve una matriz con un marco de 1px extra en lugar de un vector
+         * @return
+        */
+        unsigned char** MyToArray() const;
+
+        /**
         * @brief
         */
         void FromArray(unsigned char* Img, int, int);
